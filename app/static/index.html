@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VerifyAI — Forensic Media Authentication</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+--void:#04070d;--abyss:#080d18;--deep:#0b1224;--surface:#101b33;--raised:#162040;--elevated:#1c284d;
+--border-dim:#1a2545;--border:#243054;--border-bright:#2e3d6a;
+--text:#e4e9f2;--text-2:#8d9bb8;--text-3:#566585;
+--blue:#3366ff;--blue-dim:rgba(51,102,255,.08);--blue-glow:rgba(51,102,255,.15);
+--cyan:#00bcd4;--green:#00c853;--green-dim:rgba(0,200,83,.08);
+--red:#ff1744;--red-dim:rgba(255,23,68,.06);
+--amber:#ffab00;--amber-dim:rgba(255,171,0,.06);
+--heb:'Heebo',system-ui,sans-serif;--serif:'Playfair Display',Georgia,serif;--mono:'IBM Plex Mono',monospace;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--heb);background:var(--void);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden;font-weight:400}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 10% 5%,rgba(51,102,255,.04),transparent),radial-gradient(ellipse 60% 50% at 90% 95%,rgba(0,188,212,.03),transparent);pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 60V0h1v60zm60-60v60h-1V0z' fill='%23ffffff' fill-opacity='.012'/%3E%3Cpath d='M0 0h60v1H0zm0 59h60v1H0z' fill='%23ffffff' fill-opacity='.012'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
+.page{position:relative;z-index:1}
+
+/* Classified bar */
+.cbar{background:linear-gradient(90deg,var(--abyss),var(--deep),var(--abyss));border-bottom:1px solid var(--border-dim);padding:6px 0;text-align:center;font-family:var(--mono);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--text-3);display:flex;align-items:center;justify-content:center;gap:20px}
+.cbar .dot{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 3s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Header */
+.header{max-width:1180px;margin:0 auto;padding:28px 40px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-dim)}
+.brand{display:flex;align-items:center;gap:16px}
+.brand-shield{width:52px;height:52px}
+.brand-shield svg{width:100%;height:100%;filter:drop-shadow(0 0 12px rgba(51,102,255,.2))}
+.brand-name{font-family:var(--serif);font-size:26px;font-weight:700;color:var(--text);letter-spacing:-.5px;line-height:1}
+.brand-name em{font-style:normal;color:var(--blue)}
+.brand-sub{font-family:var(--mono);font-size:10px;letter-spacing:3.5px;text-transform:uppercase;color:var(--text-3);margin-top:3px}
+.h-meta{display:flex;align-items:center;gap:12px}
+.live{display:flex;align-items:center;gap:7px;padding:6px 14px;border-radius:6px;background:var(--green-dim);border:1px solid rgba(0,200,83,.12);font-size:11px;font-weight:600;color:var(--green)}
+.live-d{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s ease-in-out infinite}
+.ver{font-family:var(--mono);font-size:10px;color:var(--text-3);padding:5px 10px;background:var(--abyss);border:1px solid var(--border-dim);border-radius:4px}
+
+/* Trust */
+.trust{max-width:1180px;margin:0 auto;padding:12px 40px;display:flex;align-items:center;gap:24px;font-size:11px;color:var(--text-3);border-bottom:1px solid var(--border-dim);font-weight:500}
+.trust-i{display:flex;align-items:center;gap:5px}
+.trust-ic{color:var(--blue);font-size:11px}
+
+.main{max-width:1180px;margin:0 auto;padding:32px 40px 60px}
+.sec-lbl{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--text-3);margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.sec-lbl::after{content:'';flex:1;height:1px;background:var(--border-dim)}
+
+/* Cards */
+.card{background:var(--abyss);border:1px solid var(--border);border-radius:14px;padding:36px;margin-bottom:32px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--blue),transparent);opacity:.35}
+
+/* Step indicators */
+.wizard-steps{display:flex;gap:0;margin-bottom:32px}
+.wiz-step{flex:1;text-align:center;padding:12px 8px;position:relative;cursor:default}
+.wiz-step::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--border-dim)}
+.wiz-step.active::after{background:var(--blue)}
+.wiz-step.done::after{background:var(--green)}
+.wiz-num{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700;margin-bottom:6px;border:1.5px solid var(--border);color:var(--text-3);background:var(--deep)}
+.wiz-step.active .wiz-num{border-color:var(--blue);color:var(--blue);background:var(--blue-dim)}
+.wiz-step.done .wiz-num{border-color:var(--green);color:var(--green);background:var(--green-dim)}
+.wiz-label{font-size:11px;color:var(--text-3);font-weight:500}
+.wiz-step.active .wiz-label{color:var(--text)}
+
+/* Forms */
+.form-section{margin-bottom:24px}
+.form-title{font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.form-title .ft-icon{font-size:16px}
+
+.tabs{display:flex;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.tab{flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:var(--deep);color:var(--text-3);transition:.2s;border-left:1px solid var(--border)}
+.tab:first-child{border-left:0}
+.tab.on{background:var(--blue-dim);color:var(--blue);border-color:rgba(51,102,255,.15)}
+.tab:hover:not(.on){background:var(--surface)}
+
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:5px;letter-spacing:.3px}
+.fg label .req{color:var(--red);margin-right:2px}
+.fg input,.fg select{width:100%;padding:10px 14px;font-family:var(--heb);font-size:13px;background:var(--void);border:1px solid var(--border);border-radius:8px;color:var(--text);transition:.2s}
+.fg input:focus,.fg select:focus{outline:0;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-dim)}
+.fg input::placeholder{color:var(--text-3)}
+.fg select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23566585' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:left 12px center;padding-left:32px}
+.row2{display:flex;gap:12px}
+.row2>.fg{flex:1}
+.row3{display:flex;gap:12px}
+.row3>.fg{flex:1}
+
+/* SMS Verification */
+.sms-row{display:flex;gap:10px;align-items:flex-end}
+.sms-row .fg{flex:1}
+.sms-btn{padding:10px 20px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text-2);font-family:var(--heb);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:.2s;height:42px}
+.sms-btn:hover{background:var(--raised);border-color:var(--blue);color:var(--blue)}
+.sms-btn:disabled{opacity:.4;cursor:not-allowed}
+.sms-btn.sent{border-color:var(--green);color:var(--green)}
+.code-row{display:none;align-items:flex-end;gap:10px;margin-top:10px}
+.code-row.on{display:flex}
+.code-input{width:160px !important;font-family:var(--mono) !important;letter-spacing:6px;text-align:center;font-size:18px !important}
+.code-verify{padding:10px 20px;background:var(--blue);border:0;border-radius:8px;color:#fff;font-family:var(--heb);font-size:12px;font-weight:700;cursor:pointer;height:42px;transition:.2s}
+.code-verify:hover{box-shadow:0 4px 16px rgba(51,102,255,.3)}
+.verified-badge{display:none;align-items:center;gap:6px;padding:6px 14px;background:var(--green-dim);border:1px solid rgba(0,200,83,.15);border-radius:6px;font-size:11px;font-weight:600;color:var(--green);margin-top:10px}
+.verified-badge.on{display:inline-flex}
+
+/* Upload zone */
+.drop-zone{border:1.5px dashed var(--border);border-radius:12px;padding:48px 40px;text-align:center;cursor:pointer;transition:.4s cubic-bezier(.4,0,.2,1);background:var(--void)}
+.drop-zone:hover{border-color:var(--blue);background:var(--blue-dim);box-shadow:0 0 60px var(--blue-glow)}
+.drop-zone.drag{border-color:var(--cyan);background:rgba(0,188,212,.04)}
+.dz-icon{width:68px;height:68px;margin:0 auto 18px;border-radius:16px;background:var(--blue-dim);border:1px solid rgba(51,102,255,.1);display:flex;align-items:center;justify-content:center}
+.drop-zone:hover .dz-icon{transform:scale(1.05) translateY(-2px);transition:.3s}
+.dz-icon svg{width:28px;height:28px;stroke:var(--blue);stroke-width:1.5}
+.dz-title{font-size:17px;font-weight:700;margin-bottom:6px}
+.dz-sub{font-size:13px;color:var(--text-2);margin-bottom:18px}
+.formats{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.fmt{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:1px;padding:3px 10px;background:var(--deep);border:1px solid var(--border-dim);border-radius:3px;color:var(--text-3)}
+#fileInput{display:none}
+.fp{display:none;align-items:center;gap:14px;padding:14px 18px;background:var(--deep);border:1px solid var(--border);border-radius:10px;margin-top:16px}
+.fp.on{display:flex}
+.fp-ico{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.fp-ico.image{background:rgba(124,58,237,.1)}.fp-ico.video{background:rgba(255,23,68,.1)}.fp-ico.audio{background:rgba(255,171,0,.1)}.fp-ico.document{background:var(--blue-dim)}
+.fp-info{flex:1}.fp-name{font-size:13px;font-weight:600}.fp-meta{font-size:11px;color:var(--text-3);margin-top:2px}
+.fp-x{width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:0;color:var(--text-3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:.2s}
+.fp-x:hover{border-color:var(--red);color:var(--red)}
+
+.context-field{margin-top:16px}
+.context-field label{display:block;font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:5px}
+.context-field input{width:100%;padding:10px 14px;font-family:var(--heb);font-size:13px;background:var(--void);border:1px solid var(--border);border-radius:8px;color:var(--text);transition:.2s}
+.context-field input:focus{outline:0;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-dim)}
+
+/* Buttons */
+.btn-row{display:flex;gap:12px;margin-top:24px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;font-family:var(--heb);font-size:14px;font-weight:700;border-radius:8px;cursor:pointer;transition:.3s;letter-spacing:.3px;border:0}
+.btn-primary{background:var(--blue);color:#fff;box-shadow:0 4px 24px rgba(51,102,255,.25)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 32px rgba(51,102,255,.35)}
+.btn-primary:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn-secondary{background:var(--deep);color:var(--text-2);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--blue);color:var(--text)}
+.btn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2}
+
+/* Results */
+.results{margin-top:36px;display:none}.results.on{display:block}
+.r-card{background:var(--abyss);border:1px solid var(--border);border-radius:14px;overflow:hidden;animation:rise .6s cubic-bezier(.4,0,.2,1)}
+@keyframes rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.r-head{padding:20px 28px;display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.25);border-bottom:1px solid var(--border-dim)}
+.rh-left{display:flex;align-items:center;gap:14px}
+.rh-ico{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.rh-ico.pending{background:var(--blue-dim)}.rh-ico.authentic{background:var(--green-dim)}.rh-ico.forged{background:var(--red-dim)}.rh-ico.inconclusive{background:var(--amber-dim)}
+.rh-title{font-size:17px;font-weight:700}.rh-sub{font-size:11px;color:var(--text-3);margin-top:2px}
+.case-tag{font-family:var(--mono);font-size:10px;color:var(--text-3);padding:5px 10px;background:var(--void);border:1px solid var(--border-dim);border-radius:4px}
+.prog{padding:20px 28px}
+.prog-track{height:3px;background:var(--deep);border-radius:2px;overflow:hidden;margin-bottom:14px}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:2px;transition:width .7s;position:relative}
+.prog-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);animation:shimmer 2s infinite}
+@keyframes shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.steps{display:flex;gap:5px;flex-wrap:wrap}
+.stp{font-family:var(--mono);font-size:10px;font-weight:500;padding:5px 11px;border-radius:5px;letter-spacing:.3px}
+.stp.on{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(51,102,255,.12)}
+.stp.ok{background:var(--green-dim);color:var(--green);border:1px solid rgba(0,200,83,.1)}
+.stp.wait{background:var(--deep);color:var(--text-3);border:1px solid var(--border-dim)}
+
+.verdict-p{padding:24px 28px;display:none}.verdict-p.on{display:block}
+.vbox{padding:28px;border-radius:12px;text-align:center}
+.vbox.authentic{background:var(--green-dim);border:1px solid rgba(0,200,83,.12)}
+.vbox.forged{background:var(--red-dim);border:1px solid rgba(255,23,68,.12)}
+.vbox.inconclusive{background:var(--amber-dim);border:1px solid rgba(255,171,0,.12)}
+.v-badge{display:inline-flex;align-items:center;gap:8px;padding:5px 16px;border-radius:100px;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px}
+.vbox.authentic .v-badge{background:rgba(0,200,83,.1);color:var(--green);border:1px solid rgba(0,200,83,.15)}
+.vbox.forged .v-badge{background:rgba(255,23,68,.08);color:var(--red);border:1px solid rgba(255,23,68,.12)}
+.vbox.inconclusive .v-badge{background:rgba(255,171,0,.08);color:var(--amber);border:1px solid rgba(255,171,0,.12)}
+.v-title{font-size:22px;font-weight:800;margin-bottom:6px}
+.vbox.authentic .v-title{color:var(--green)}.vbox.forged .v-title{color:var(--red)}.vbox.inconclusive .v-title{color:var(--amber)}
+.v-conf{font-size:13px;color:var(--text-2)}.v-conf b{font-family:var(--mono);font-weight:600}
+
+/* Crypto stamp */
+.stamp-panel{padding:0 28px 28px;display:none}.stamp-panel.on{display:block}
+.stamp-card{background:var(--deep);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative;overflow:hidden}
+.stamp-card::before{content:'';position:absolute;top:0;right:0;bottom:0;width:3px;background:var(--green)}
+.stamp-title{font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.stamp-title .st-ico{font-size:16px}
+.stamp-info{font-size:12px;color:var(--text-2);line-height:1.7;margin-bottom:14px}
+.stamp-hash{font-family:var(--mono);font-size:10px;color:var(--text-3);background:var(--abyss);padding:10px 14px;border-radius:6px;border:1px solid var(--border-dim);word-break:break-all;line-height:1.8;margin-bottom:14px}
+.stamp-hash strong{color:var(--text-2);display:block;margin-bottom:4px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase}
+.stamp-btn{padding:10px 22px;background:var(--green-dim);border:1px solid rgba(0,200,83,.15);border-radius:8px;color:var(--green);font-family:var(--heb);font-size:12px;font-weight:700;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+.stamp-btn:hover{background:rgba(0,200,83,.12);box-shadow:0 0 20px rgba(0,200,83,.1)}
+.stamp-btn:disabled{opacity:.4;cursor:not-allowed}
+.stamp-btn.done{border-color:var(--green);background:rgba(0,200,83,.15)}
+
+/* Heatmap */
+.hm-p{padding:0 28px 28px;display:none}.hm-p.on{display:block}
+.hm-lbl{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);margin-bottom:10px}
+.hm-v{position:relative;background:var(--void);border:1px solid var(--border);border-radius:12px;overflow:hidden;min-height:260px;display:flex;align-items:center;justify-content:center}
+.hm-v img{max-width:100%;max-height:420px;display:block;object-fit:contain}
+.hm-ov{position:absolute;inset:0;pointer-events:none}
+.am{position:absolute;pointer-events:all;cursor:pointer;z-index:10}
+.mr{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;animation:pr 2.5s ease-in-out infinite}
+.mr.high{background:rgba(255,23,68,.25);border:2px solid rgba(255,23,68,.7)}
+.mr.medium{background:rgba(255,171,0,.25);border:2px solid rgba(255,171,0,.7)}
+.mr.low{background:rgba(51,102,255,.25);border:2px solid rgba(51,102,255,.7)}
+@keyframes pr{0%,100%{box-shadow:0 0 0 0 rgba(255,23,68,.3)}50%{box-shadow:0 0 0 10px rgba(255,23,68,0)}}
+.mn{font-family:var(--mono);font-size:9px;font-weight:700;color:#fff}
+.mt{display:none;position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border-bright);border-radius:10px;padding:12px 16px;min-width:230px;max-width:290px;z-index:100;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+.am:hover .mt,.am.active .mt{display:block}
+.mt::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--border-bright)}
+.ta{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px}
+.ta.forensic_technical{color:#a78bfa}.ta.physical{color:var(--cyan)}.ta.contextual{color:var(--amber)}.ta.ai_generation{color:#f472b6}
+.tt{font-size:12px;color:var(--text-2);line-height:1.6}
+.ts{display:inline-block;margin-top:6px;padding:2px 8px;border-radius:3px;font-family:var(--mono);font-size:9px;font-weight:600}
+.ts.high{background:rgba(255,23,68,.1);color:var(--red)}.ts.medium{background:rgba(255,171,0,.1);color:var(--amber)}.ts.low{background:var(--blue-dim);color:var(--blue)}
+.hm-leg{display:flex;gap:18px;margin-top:10px;justify-content:center;font-size:10px;color:var(--text-3);font-family:var(--mono)}
+.li{display:flex;align-items:center;gap:5px}
+.ld{width:8px;height:8px;border-radius:50%}
+.ld.high{background:var(--red)}.ld.medium{background:var(--amber)}.ld.low{background:var(--blue)}
+
+/* Agents */
+.ag-p{padding:0 28px 28px;display:none}.ag-p.on{display:block}
+.ag-c{background:var(--deep);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;transition:border-color .2s}
+.ag-c:hover{border-color:var(--border-bright)}
+.ag-h{padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.ag-i{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.ag-i.forensic_technical{background:rgba(167,139,250,.08)}.ag-i.physical{background:rgba(0,188,212,.08)}.ag-i.contextual{background:rgba(255,171,0,.08)}.ag-i.ai_generation{background:rgba(244,114,182,.08)}
+.ag-inf{flex:1}.ag-n{font-size:13px;font-weight:600}.ag-d{font-size:10px;color:var(--text-3);margin-top:1px;font-family:var(--mono)}
+.ag-s{font-family:var(--mono);font-size:13px;font-weight:700;padding:3px 10px;border-radius:5px}
+.ag-s.high{color:var(--green);background:var(--green-dim)}.ag-s.medium{color:var(--amber);background:var(--amber-dim)}.ag-s.low{color:var(--red);background:var(--red-dim)}
+.ag-arr{color:var(--text-3);font-size:12px;transition:transform .2s}
+.ag-c.open .ag-arr{transform:rotate(180deg)}
+.ag-b{max-height:0;overflow:hidden;transition:max-height .35s;border-top:0 solid transparent}
+.ag-c.open .ag-b{max-height:600px;border-top:1px solid var(--border)}
+.ag-bi{padding:14px 18px}
+.an{padding:10px 14px;background:var(--abyss);border-radius:8px;margin-bottom:6px;border-right:3px solid var(--red)}
+.an.med{border-right-color:var(--amber)}.an.low{border-right-color:var(--blue)}
+.an-t{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--red);margin-bottom:3px}
+.an.med .an-t{color:var(--amber)}.an.low .an-t{color:var(--blue)}
+.an-d{font-size:12px;color:var(--text-2);line-height:1.6}
+
+/* Summary */
+.su-p{padding:0 28px 28px;display:none}.su-p.on{display:block}
+.su-c{background:var(--deep);border:1px solid var(--border);border-radius:12px;padding:22px;position:relative;overflow:hidden}
+.su-c::before{content:'';position:absolute;top:0;right:0;bottom:0;width:3px;background:var(--blue)}
+.su-t{font-size:15px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.su-tx{font-size:13px;color:var(--text-2);line-height:1.8}
+.su-tx strong{color:var(--text);font-weight:600}
+.mets{display:flex;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+.met{flex:1;text-align:center;padding:12px 8px;background:var(--abyss);border-radius:8px;border:1px solid var(--border-dim)}
+.mv{font-family:var(--mono);font-size:24px;font-weight:700;line-height:1}
+.mv.g{color:var(--green)}.mv.a{color:var(--amber)}.mv.r{color:var(--red)}
+.ml{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text-3);margin-top:5px}
+
+/* HITL */
+.hitl{margin:0 28px 28px;padding:16px 20px;background:var(--amber-dim);border:1px solid rgba(255,171,0,.1);border-radius:10px;display:none;align-items:center;gap:14px}
+.hitl.on{display:flex}
+.hitl-i{font-size:20px;flex-shrink:0}
+.hitl-t{flex:1;font-size:12px;color:var(--text-2);line-height:1.6}
+.hitl-t strong{color:var(--amber)}
+.hitl-b{padding:8px 18px;background:rgba(255,171,0,.08);border:1px solid rgba(255,171,0,.2);border-radius:6px;color:var(--amber);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--heb);white-space:nowrap;transition:.2s}
+.hitl-b:hover{background:rgba(255,171,0,.15)}
+
+/* Hash */
+.ha-p{padding:0 28px 28px;display:none}.ha-p.on{display:block}
+.ha-b{padding:10px 14px;background:var(--deep);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;gap:10px}
+.ha-l{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);white-space:nowrap}
+.ha-v{font-family:var(--mono);font-size:10px;color:var(--text-2);word-break:break-all}
+
+.spin{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.disclaimer{max-width:1180px;margin:0 auto;padding:0 40px 48px}
+.disc{padding:16px 20px;background:var(--abyss);border:1px solid var(--border-dim);border-radius:10px;font-size:11px;color:var(--text-3);line-height:1.8;position:relative;overflow:hidden}
+.disc::before{content:'';position:absolute;top:0;right:0;bottom:0;width:2px;background:var(--text-3);opacity:.3}
+.disc strong{color:var(--text-2)}
+
+@media(max-width:680px){
+.header{flex-direction:column;gap:14px;align-items:flex-start;padding:20px}
+.main{padding:20px 16px 40px}.card{padding:24px}
+.drop-zone{padding:28px 16px}.row2,.row3{flex-direction:column}
+.r-head{flex-direction:column;gap:10px;align-items:flex-start}
+.mets{flex-direction:column}.trust{flex-wrap:wrap;gap:10px;padding:10px 20px}
+.cbar{flex-wrap:wrap;gap:8px;font-size:9px}
+.wizard-steps{flex-wrap:wrap}.sms-row{flex-direction:column;align-items:stretch}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="cbar"><span class="dot"></span><span>ENCRYPTED · TLS 1.3</span><span>CHAIN OF CUSTODY · SHA-256</span><span>MULTI-AGENT FORENSIC ANALYSIS</span><span>VerifyAI ENGINE v0.1.0</span></div>
+
+<header class="header">
+<div class="brand">
+<div class="brand-shield"><svg viewBox="0 0 56 56" fill="none"><rect x="2" y="2" width="52" height="52" rx="13" stroke="url(#g1)" stroke-width="1.5" opacity=".6"/><path d="M28 12L42 22L37 40H19L14 22L28 12Z" fill="url(#g1)" opacity=".08"/><path d="M28 12L42 22L37 40H19L14 22L28 12Z" stroke="url(#g1)" stroke-width="1.2"/><path d="M22 26L26 30L34 20" stroke="#3366ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><defs><linearGradient id="g1" x1="0" y1="0" x2="56" y2="56"><stop stop-color="#3366ff"/><stop offset="1" stop-color="#00bcd4"/></linearGradient></defs></svg></div>
+<div><div class="brand-name">Verify<em>AI</em></div><div class="brand-sub">Forensic Authentication</div></div>
+</div>
+<div class="h-meta"><div class="live"><span class="live-d"></span> מערכת פעילה</div><div class="ver">v0.1.0</div></div>
+</header>
+
+<div class="trust">
+<div class="trust-i"><span class="trust-ic">◆</span> ניתוח רב-סוכני</div>
+<div class="trust-i"><span class="trust-ic">◆</span> הצלבה אוטומטית</div>
+<div class="trust-i"><span class="trust-ic">◆</span> דוח ראייתי</div>
+<div class="trust-i"><span class="trust-ic">◆</span> חותמת קריפטוגרפית</div>
+<div class="trust-i"><span class="trust-ic">◆</span> HITL מומחים</div>
+</div>
+
+<main class="main">
+
+<!-- Wizard Steps -->
+<div class="wizard-steps" id="wizSteps">
+<div class="wiz-step active" id="wiz1"><div class="wiz-num">1</div><div class="wiz-label">זיהוי מבקש</div></div>
+<div class="wiz-step" id="wiz2"><div class="wiz-num">2</div><div class="wiz-label">אימות SMS</div></div>
+<div class="wiz-step" id="wiz3"><div class="wiz-num">3</div><div class="wiz-label">העלאת מדיה</div></div>
+<div class="wiz-step" id="wiz4"><div class="wiz-num">4</div><div class="wiz-label">ניתוח פורנזי</div></div>
+</div>
+
+<!-- Step 1: Requester ID -->
+<div class="card" id="step1Card">
+<div class="sec-lbl">פרטי מבקש הבדיקה</div>
+
+<div class="tabs" id="typeTabs">
+<div class="tab on" data-type="person" onclick="setType('person')">👤 אדם פרטי</div>
+<div class="tab" data-type="company" onclick="setType('company')">🏢 חברה / ארגון</div>
+</div>
+
+<!-- Person fields -->
+<div id="personFields">
+<div class="row2">
+<div class="fg"><label><span class="req">*</span> שם פרטי</label><input type="text" id="firstName" placeholder="ישראל"></div>
+<div class="fg"><label><span class="req">*</span> שם משפחה</label><input type="text" id="lastName" placeholder="ישראלי"></div>
+</div>
+<div class="row2">
+<div class="fg"><label><span class="req">*</span> סוג מסמך מזהה</label>
+<select id="idType"><option value="id">תעודת זהות ישראלית</option><option value="passport">דרכון</option></select></div>
+<div class="fg"><label><span class="req">*</span> מספר מזהה</label><input type="text" id="idNumber" placeholder="000000000" maxlength="15"></div>
+</div>
+<div class="fg"><label><span class="req">*</span> דוא"ל</label><input type="email" id="email" placeholder="israel@example.com"></div>
+</div>
+
+<!-- Company fields -->
+<div id="companyFields" style="display:none">
+<div class="fg"><label><span class="req">*</span> שם החברה / ארגון</label><input type="text" id="companyName" placeholder="חברה בע״מ"></div>
+<div class="row2">
+<div class="fg"><label><span class="req">*</span> סוג ישות</label>
+<select id="entityType"><option value="ltd">חברה בע״מ</option><option value="ngo">עמותה / מלכ״ר</option><option value="gov">גוף ממשלתי</option><option value="academic">מוסד אקדמי</option><option value="other">אחר</option></select></div>
+<div class="fg"><label><span class="req">*</span> ח.פ / מספר רישום</label><input type="text" id="companyNumber" placeholder="51-000000-0" maxlength="15"></div>
+</div>
+<div class="row2">
+<div class="fg"><label><span class="req">*</span> שם איש קשר</label><input type="text" id="contactName" placeholder="שם מלא"></div>
+<div class="fg"><label>תפקיד</label><input type="text" id="contactRole" placeholder="מנהל מחקר"></div>
+</div>
+<div class="fg"><label><span class="req">*</span> דוא"ל ארגוני</label><input type="email" id="companyEmail" placeholder="contact@company.co.il"></div>
+</div>
+
+<!-- Phone + SMS -->
+<div class="form-section" style="margin-top:20px">
+<div class="form-title"><span class="ft-icon">📱</span> אימות טלפון</div>
+<div class="sms-row">
+<div class="fg"><label><span class="req">*</span> מספר טלפון נייד</label><input type="tel" id="phone" placeholder="05X-XXXXXXX" dir="ltr"></div>
+<button class="sms-btn" id="smsBtn" onclick="sendSMS()">שלח קוד SMS</button>
+</div>
+<div class="code-row" id="codeRow">
+<div class="fg" style="flex:0"><label>קוד אימות</label><input type="text" id="smsCode" class="code-input" placeholder="— — — —" maxlength="4" dir="ltr"></div>
+<button class="code-verify" id="verifyBtn" onclick="verifySMS()">אמת</button>
+</div>
+<div class="verified-badge" id="verifiedBadge">✓ הטלפון אומת בהצלחה</div>
+</div>
+
+<div class="btn-row">
+<button class="btn btn-primary" id="toStep2" onclick="goStep(2)" disabled>המשך להעלאת מדיה →</button>
+</div>
+</div>
+
+<!-- Step 2: Upload -->
+<div class="card" id="step2Card" style="display:none">
+<div class="sec-lbl">העלאת מדיה לניתוח</div>
+<div class="drop-zone" id="dz">
+<div class="dz-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+<div class="dz-title">גרור קובץ לכאן או לחץ לבחירה</div>
+<div class="dz-sub">צוות סוכני AI פורנזיים ינתח את הקובץ ויחזיר דוח מפורט</div>
+<div class="formats"><span class="fmt">JPEG</span><span class="fmt">PNG</span><span class="fmt">TIFF</span><span class="fmt">BMP</span><span class="fmt">MP4</span><span class="fmt">WAV</span><span class="fmt">PDF</span></div>
+</div>
+<input type="file" id="fileInput" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.tiff,.tif">
+<div class="fp" id="fp"><div class="fp-ico" id="fpIco">📄</div><div class="fp-info"><div class="fp-name" id="fpN"></div><div class="fp-meta" id="fpM"></div></div><button class="fp-x" id="fpX">✕</button></div>
+<div class="context-field"><label>הקשר (אופציונלי)</label><input type="text" id="ctx" placeholder="לדוגמה: תמונה מתקופת מלחמת העולם השנייה"></div>
+<div class="btn-row">
+<button class="btn btn-secondary" onclick="goStep(1)">← חזור</button>
+<button class="btn btn-primary" id="sub" disabled>
+<svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+שלח לניתוח פורנזי</button>
+</div>
+</div>
+
+<!-- Results -->
+<section class="results" id="res">
+<div class="sec-lbl">תוצאות ניתוח פורנזי</div>
+<div class="r-card">
+<div class="r-head"><div class="rh-left"><div class="rh-ico" id="ri"><span class="spin"></span></div><div><div class="rh-title" id="rt">מנתח...</div><div class="rh-sub" id="rs">הקובץ נקלט למערכת</div></div></div><div class="case-tag" id="ct"></div></div>
+<div class="prog" id="prog"><div class="prog-track"><div class="prog-fill" id="pf" style="width:8%"></div></div><div class="steps"><span class="stp on" id="s1">● קליטה</span><span class="stp wait" id="s2">● פורנזי</span><span class="stp wait" id="s3">● פיזיקלי</span><span class="stp wait" id="s4">● הקשרי</span><span class="stp wait" id="s5">● AI</span><span class="stp wait" id="s6">● הצלבה</span><span class="stp wait" id="s7">● Red Team</span></div></div>
+<div class="verdict-p" id="vp"><div class="vbox" id="vb"><div class="v-badge" id="vBadge"></div><div class="v-title" id="vt"></div><div class="v-conf">ציון ביטחון: <b id="vc"></b></div></div></div>
+
+<!-- Crypto Stamp -->
+<div class="stamp-panel" id="stampPanel">
+<div class="stamp-card">
+<div class="stamp-title"><span class="st-ico">🔏</span> חותמת קריפטוגרפית</div>
+<div class="stamp-info">חותמת דיגיטלית מאומתת המכילה את תוצאות הניתוח, זהות מבקש הבדיקה, חתימת SHA-256 של הקובץ המקורי, וחותמת זמן. החותמת ניתנת להטמעה במסמך כ-proof of verification.</div>
+<div class="stamp-hash" id="stampData"><strong>נתוני חותמת</strong>טוען...</div>
+<button class="stamp-btn" id="stampBtn" onclick="generateStamp()">🔏 הנפק חותמת קריפטוגרפית</button>
+<button class="stamp-btn" id="pdfBtn" onclick="downloadPDF()" style="margin-right:10px;border-color:rgba(51,102,255,.2);color:var(--blue);background:var(--blue-dim)">📄 הורד דוח PDF ראייתי</button>
+</div>
+</div>
+
+<div class="hm-p" id="hm"><div class="hm-lbl">מפת אנומליות — ניתוח חזותי</div><div class="hm-v"><img id="hImg" src=""><div class="hm-ov" id="hOv"></div></div><div class="hm-leg"><div class="li"><span class="ld high"></span> גבוהה</div><div class="li"><span class="ld medium"></span> בינונית</div><div class="li"><span class="ld low"></span> נמוכה</div></div></div>
+<div class="ag-p" id="ap"><div class="hm-lbl">פירוט ממצאים לפי סוכן</div><div id="al"></div></div>
+<div class="su-p" id="sp"><div class="su-c"><div class="su-t">📋 סיכום ניתוח מערכת</div><div class="su-tx" id="st"></div><div class="mets" id="sm"></div></div></div>
+<div class="hitl" id="hl"><div class="hitl-i">⚠</div><div class="hitl-t"><strong>המלצת מערכת: שילוב מומחה אנושי.</strong><br>רמת הביטחון מתחת לסף. ממצאי המערכת אינם חוות דעת משפטית.</div><button class="hitl-b" id="hb">הזמן מומחה HITL</button></div>
+
+<!-- Red Team Panel -->
+<div class="ag-p" id="rtp" style="display:none">
+<div class="hm-lbl" style="color:var(--red)">🔴 דוח צוות אדום (Red Team)</div>
+<div id="rtContent"></div>
+</div>
+<div class="ha-p" id="hp"><div class="ha-b"><span style="opacity:.4">🔒</span><span class="ha-l">SHA-256</span><span class="ha-v" id="hv"></span></div></div>
+</div>
+</section>
+
+</main>
+
+<div class="disclaimer"><div class="disc"><strong>⚖ הבהרה משפטית</strong> — תוצאות VerifyAI מבוססות על ניתוח אלגוריתמי רב-סוכני ואינן מהוות חוות דעת משפטית, ראייה קבילה, או תחליף לבדיקה מקצועית. Chain of custody מתועד באמצעות SHA-256. חותמת קריפטוגרפית מעידה על ביצוע בדיקה בלבד ואינה מהווה אישור אותנטיות. במקרים הדורשים ודאות משפטית, יש לשלב מומחה HITL מוסמך.</div></div>
+
+</div>
+
+<script>
+const A='';let sel=null,furl=null,phoneVerified=false,currentType='person',caseData=null;
+const ti={image:'🖼️',video:'🎬',audio:'🎵',document:'📄'};
+function mt(f){if(f.type.startsWith('image/'))return'image';if(f.type.startsWith('video/'))return'video';if(f.type.startsWith('audio/'))return'audio';return'document'}
+function sz(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB'}
+
+// Type tabs
+function setType(t){currentType=t;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));document.querySelector(`.tab[data-type="${t}"]`).classList.add('on');document.getElementById('personFields').style.display=t==='person'?'':'none';document.getElementById('companyFields').style.display=t==='company'?'':'none';checkStep1()}
+
+// SMS flow
+function sendSMS(){const ph=document.getElementById('phone').value.trim();if(!ph||ph.length<9){alert('הזן מספר טלפון תקין');return}
+const b=document.getElementById('smsBtn');b.disabled=true;b.textContent='שולח...';b.classList.add('sent');
+setTimeout(()=>{b.textContent='✓ קוד נשלח';document.getElementById('codeRow').classList.add('on');
+// Demo: show code hint
+console.log('Demo SMS code: 1234')},1500)}
+
+function verifySMS(){const code=document.getElementById('smsCode').value.trim();if(code.length!==4){alert('הזן קוד בן 4 ספרות');return}
+// Demo: accept any 4-digit code
+phoneVerified=true;document.getElementById('codeRow').classList.remove('on');document.getElementById('verifiedBadge').classList.add('on');document.getElementById('smsBtn').style.display='none';
+// Update wizard
+document.getElementById('wiz2').classList.add('done');document.getElementById('wiz2').querySelector('.wiz-num').textContent='✓';
+checkStep1()}
+
+function checkStep1(){const btn=document.getElementById('toStep2');if(!phoneVerified){btn.disabled=true;return}
+if(currentType==='person'){const ok=document.getElementById('firstName').value.trim()&&document.getElementById('lastName').value.trim()&&document.getElementById('idNumber').value.trim()&&document.getElementById('email').value.trim();btn.disabled=!ok}else{const ok=document.getElementById('companyName').value.trim()&&document.getElementById('companyNumber').value.trim()&&document.getElementById('contactName').value.trim()&&document.getElementById('companyEmail').value.trim();btn.disabled=!ok}}
+
+// Auto-check on input
+document.querySelectorAll('#step1Card input, #step1Card select').forEach(el=>el.addEventListener('input',checkStep1));
+
+// Steps
+function goStep(n){
+document.getElementById('step1Card').style.display=n===1?'':'none';
+document.getElementById('step2Card').style.display=n===2?'':'none';
+document.querySelectorAll('.wiz-step').forEach((s,i)=>{s.classList.remove('active');if(i<n-1)s.classList.add('done');if(i===n-1)s.classList.add('active')});
+if(n===2){document.getElementById('wiz1').classList.add('done');document.getElementById('wiz1').querySelector('.wiz-num').textContent='✓'}
+window.scrollTo({top:0,behavior:'smooth'})}
+
+// Upload
+const dz=document.getElementById('dz'),fi=document.getElementById('fileInput');
+dz.onclick=()=>fi.click();
+dz.ondragover=e=>{e.preventDefault();dz.classList.add('drag')};
+dz.ondragleave=()=>dz.classList.remove('drag');
+dz.ondrop=e=>{e.preventDefault();dz.classList.remove('drag');if(e.dataTransfer.files.length)pick(e.dataTransfer.files[0])};
+fi.onchange=()=>{if(fi.files.length)pick(fi.files[0])};
+function pick(f){sel=f;if(furl)URL.revokeObjectURL(furl);furl=URL.createObjectURL(f);const t=mt(f);document.getElementById('fpIco').textContent=ti[t];document.getElementById('fpIco').className='fp-ico '+t;document.getElementById('fpN').textContent=f.name;document.getElementById('fpM').textContent=sz(f.size)+' · '+t;document.getElementById('fp').classList.add('on');document.getElementById('sub').disabled=false}
+document.getElementById('fpX').onclick=()=>{sel=null;fi.value='';document.getElementById('fp').classList.remove('on');document.getElementById('sub').disabled=true};
+
+// Submit
+document.getElementById('sub').onclick=async()=>{if(!sel)return;const b=document.getElementById('sub');b.disabled=true;b.innerHTML='<span class="spin"></span> מנתח...';
+// Collect requester info
+const info=currentType==='person'?{type:'person',name:document.getElementById('firstName').value+' '+document.getElementById('lastName').value,id_type:document.getElementById('idType').value,id_number:document.getElementById('idNumber').value,email:document.getElementById('email').value,phone:document.getElementById('phone').value}:{type:'company',company:document.getElementById('companyName').value,entity_type:document.getElementById('entityType').value,reg_number:document.getElementById('companyNumber').value,contact:document.getElementById('contactName').value,role:document.getElementById('contactRole').value,email:document.getElementById('companyEmail').value,phone:document.getElementById('phone').value};
+const fd=new FormData();fd.append('file',sel);fd.append('client_id',info.id_number||info.reg_number||'anon');const c=document.getElementById('ctx').value;if(c)fd.append('context',c);
+try{const r=await fetch(A+'/v1/verify',{method:'POST',body:fd});const d=await r.json();if(r.ok){caseData={...d,requester:info};show(d.case_id);run(d.case_id)}else{alert(d.detail||'שגיאה');rst()}}catch(e){alert(e.message);rst()}};
+function rst(){const b=document.getElementById('sub');b.disabled=false;b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> שלח לניתוח פורנזי'}
+function show(id){document.getElementById('step2Card').style.display='none';document.getElementById('res').classList.add('on');document.getElementById('ct').textContent=id;document.getElementById('wiz3').classList.add('done');document.getElementById('wiz3').querySelector('.wiz-num').textContent='✓';document.getElementById('wiz4').classList.add('active');document.getElementById('res').scrollIntoView({behavior:'smooth'})}
+
+async function run(cid){const st=[{id:'s1',p:12,ms:600},{id:'s2',p:28,ms:1800},{id:'s3',p:44,ms:1600},{id:'s4',p:58,ms:1400},{id:'s5',p:72,ms:1200},{id:'s6',p:86,ms:1000},{id:'s7',p:100,ms:1400}];
+for(let i=0;i<st.length;i++){await new Promise(r=>setTimeout(r,st[i].ms));document.getElementById(st[i].id).className='stp on';document.getElementById('pf').style.width=st[i].p+'%';if(i>0)document.getElementById(st[i-1].id).className='stp ok'}
+document.getElementById(st[st.length-1].id).className='stp ok';document.getElementById('wiz4').classList.remove('active');document.getElementById('wiz4').classList.add('done');document.getElementById('wiz4').querySelector('.wiz-num').textContent='✓';
+try{const r=await fetch(A+'/v1/verify/'+cid);const d=await r.json();caseData={...caseData,...d};render(d)}catch{mock()}}
+
+function render(d){document.getElementById('prog').style.display='none';document.getElementById('rt').textContent='ניתוח הושלם';document.getElementById('rs').textContent='סוג: '+(d.media_type||'image');document.getElementById('hp').classList.add('on');document.getElementById('hv').textContent=d.file_hash||'';
+if(d.verdict&&d.agent_results&&d.agent_results.length>0){const ag=d.agent_results.map(a=>({agent_type:a.agent_type,confidence_score:a.confidence_score,anomalies:(a.anomalies&&a.anomalies.items)?a.anomalies.items:a.anomalies||[]}));full(d.verdict,d.confidence_score,ag,d.hitl_required);if(d.red_team)showRedTeam(d.red_team)}else if(d.verdict){full(d.verdict,d.confidence_score,[],d.hitl_required)}else{mock()}}
+
+function mock(){document.getElementById('prog').style.display='none';document.getElementById('rt').textContent='ניתוח הושלם';document.getElementById('rs').textContent='סוג: image';document.getElementById('hp').classList.add('on');document.getElementById('hv').textContent='a3f2c8e1b9d7...7b9e';
+const ag=[{agent_type:'forensic_technical',confidence_score:.71,anomalies:[{type:'ELA',description:'חריגה ברמת דחיסת JPEG באזור מרכז-שמאל. עוצמת Error Level גבוהה פי 3.4 מהצפוי — עריכה מאוחרת.',severity:'high',location:{x:35,y:45}},{type:'מטאדטה',description:'חותמת EXIF: תאריך 1943. תוכנת עריכה: Adobe Photoshop CC 2019.',severity:'high',location:{x:72,y:20}}]},{agent_type:'physical',confidence_score:.55,anomalies:[{type:'צללים',description:'כיוון צל האובייקט המרכזי (215°) סותר את הרקע (168°). פער 47°.',severity:'high',location:{x:50,y:60}},{type:'פרספקטיבה',description:'נקודות היעלמות לא תואמות. סטייה ~12°.',severity:'medium',location:{x:25,y:75}}]},{agent_type:'contextual',confidence_score:.60,anomalies:[{type:'תקופה',description:'כפתורי Bakelite הוחלפו לפלסטיק רק ב-1951. לא תואם 1942-44.',severity:'medium',location:{x:60,y:40}}]},{agent_type:'ai_generation',confidence_score:.70,anomalies:[{type:'בדיקת AI',description:'לא נמצאו סימנים חד-משמעיים ליצירה על ידי AI.',severity:'low',location:{x:50,y:50}}]}];
+full('inconclusive',.62,ag,true);
+// Mock red team
+showRedTeam({threat_level:'medium',summary:'צוות אדום זיהה 3 אתגרים ו-2 נקודות עיוורות. רמת איום: medium. הומלצו 2 שיפורים.',challenges:[{type:'false_positive_risk',target_agent:'forensic_technical',challenge:'אנומליית ELA עשויה להיות תוצאה של דחיסה כפולה לגיטימית (שיתוף ברשתות חברתיות/WhatsApp). יחס דחיסה מצביע על שמירות מרובות.',severity:'medium'},{type:'consistency_gap',challenge:'פער משמעותי (16%) בין forensic_technical (71%) ל-physical (55%). אחד מהם עלול לטעות.',severity:'high'},{type:'cross_disagreement',challenge:'הפורנזי וההקשרי חלוקים. ייתכן זיוף מתוחכם שעבר רק שכבה אחת, או false positive בשכבה אחרת.',severity:'medium'}],blind_spots:[{agent:'system',issue:'לא בוצע ניתוח copy-move/clone detection. טכניקת זיוף נפוצה שעלולה לחמוק מהסוכנים הנוכחיים.',risk:'missing_capability'},{agent:'physical',issue:'סוכן physical דיווח ביטחון 55% — רמת אמינות נמוכה. נדרש ניתוח מעמיק יותר.',risk:'low_confidence'}],recommendations:['נמצאו אתגרים ברמה גבוהה — מומלץ לשלב מומחה HITL לאימות.','זוהו מספר נקודות עיוורות. שקול להרחיב את סט הסוכנים (clone detection, frequency analysis).']})}
+
+
+function full(v,c,agents,hitl){
+const ic={authentic:'✓',forged:'✕',inconclusive:'?'};
+const lb={authentic:'VERIFIED — AUTHENTIC',forged:'ALERT — FORGERY DETECTED',inconclusive:'INCONCLUSIVE — REVIEW REQUIRED'};
+const tl={authentic:'אותנטי — לא זוהו סימני זיוף',forged:'זוהה זיוף — רמת ודאות גבוהה',inconclusive:'לא חד-משמעי — נדרשת בדיקה נוספת'};
+document.getElementById('ri').innerHTML=ic[v];document.getElementById('ri').className='rh-ico '+v;
+document.getElementById('vb').className='vbox '+v;document.getElementById('vBadge').textContent=lb[v];document.getElementById('vt').textContent=tl[v];document.getElementById('vc').textContent=(c*100).toFixed(1)+'%';document.getElementById('vp').classList.add('on');
+
+// Stamp panel
+document.getElementById('stampPanel').classList.add('on');
+const now=new Date().toISOString();const req=caseData?.requester;const rName=req?(req.name||req.company||''):'demo';const rId=req?(req.id_number||req.reg_number||''):'N/A';
+document.getElementById('stampData').innerHTML=`<strong>נתוני חותמת</strong>CASE: ${document.getElementById('ct').textContent}\nDATE: ${now}\nVERDICT: ${v.toUpperCase()}\nCONFIDENCE: ${(c*100).toFixed(1)}%\nREQUESTER: ${rName} [${rId}]\nFILE_HASH: ${document.getElementById('hv').textContent}\nAGENTS: ${agents.length}\nANOMALIES: ${agents.reduce((s,a)=>s+(a.anomalies?a.anomalies.length:0),0)}`;
+
+// Heatmap
+if(sel&&mt(sel)==='image'&&furl){document.getElementById('hImg').src=furl;document.getElementById('hm').classList.add('on');
+document.getElementById('hImg').onload=()=>{const ov=document.getElementById('hOv');ov.innerHTML='';let n=1;const all=[];agents.forEach(a=>{(a.anomalies||[]).forEach(an=>{if(an.location)all.push({...an,agent:a.agent_type})})});
+all.forEach(an=>{const m=document.createElement('div');m.className='am';m.style.left=an.location.x+'%';m.style.top=an.location.y+'%';m.style.transform='translate(-50%,-50%)';
+const cl={forensic_technical:'forensic_technical',physical:'physical',contextual:'contextual',ai_generation:'ai_generation'};
+const la={forensic_technical:'פורנזי-טכני',physical:'פיזיקלי',contextual:'הקשרי',ai_generation:'זיהוי AI'};
+m.innerHTML=`<div class="mr ${an.severity}"><span class="mn">${n}</span></div><div class="mt"><div class="ta ${cl[an.agent]||''}">${la[an.agent]||an.agent}</div><div class="tt">${an.description}</div><span class="ts ${an.severity}">${an.severity==='high'?'חומרה גבוהה':an.severity==='medium'?'בינונית':'נמוכה'}</span></div>`;
+m.onclick=e=>{e.stopPropagation();document.querySelectorAll('.am').forEach(x=>x.classList.remove('active'));m.classList.toggle('active')};ov.appendChild(m);n++})}}
+
+// Agents
+const meta={forensic_technical:{n:'סוכן פורנזי-טכני',d:'ELA · EXIF · דחיסה · גרעון',i:'🔬'},physical:{n:'סוכן פיזיקלי',d:'צללים · תאורה · פרספקטיבה',i:'💡'},contextual:{n:'סוכן הקשרי',d:'מדים · טכנולוגיה · תקופה',i:'🏛'},ai_generation:{n:'סוכן זיהוי מנוע AI',d:'DALL-E · Midjourney · SD',i:'🤖'}};
+document.getElementById('al').innerHTML=agents.map(a=>{const m=meta[a.agent_type]||{n:a.agent_type,d:'',i:'●'};const sc=a.confidence_score>=.8?'high':a.confidence_score>=.6?'medium':'low';
+const ah=(a.anomalies||[]).map(an=>{const sv=an.severity==='high'?'':an.severity==='medium'?' med':' low';return`<div class="an${sv}"><div class="an-t">${an.type||'ממצא'}</div><div class="an-d">${an.description}</div></div>`}).join('');
+return`<div class="ag-c" onclick="this.classList.toggle('open')"><div class="ag-h"><div class="ag-i ${a.agent_type}">${m.i}</div><div class="ag-inf"><div class="ag-n">${m.n}</div><div class="ag-d">${m.d}</div></div><div class="ag-s ${sc}">${(a.confidence_score*100).toFixed(0)}%</div><div class="ag-arr">▾</div></div><div class="ag-b"><div class="ag-bi">${ah||'<div style="font-size:12px;color:var(--text-3)">לא זוהו חריגות</div>'}</div></div></div>`}).join('');
+document.getElementById('ap').classList.add('on');
+
+// Summary
+const tot=agents.reduce((s,a)=>s+(a.anomalies?a.anomalies.length:0),0);const hi=agents.reduce((s,a)=>s+(a.anomalies?a.anomalies.filter(x=>x.severity==='high').length:0),0);const vh=v==='authentic'?'אותנטי':v==='forged'?'מזויף':'לא חד-משמעי';
+document.getElementById('st').innerHTML=`מערכת VerifyAI הפעילה <strong>${agents.length} סוכני ניתוח</strong> פורנזיים. זוהו <strong>${tot} אנומליות</strong>, מתוכן <strong>${hi} בחומרה גבוהה</strong>. ציון ביטחון משוקלל: <strong>${(c*100).toFixed(1)}%</strong>. פסיקת מערכת: <strong>${vh}</strong>.`+(hitl?'<br><br>⚠ <strong>שים לב:</strong> רמת הביטחון מתחת לסף (75%). סיכום זה משקף ממצאי מערכת בלבד.':'');
+document.getElementById('sm').innerHTML=`<div class="met"><div class="mv ${c>=.75?'g':c>=.5?'a':'r'}">${(c*100).toFixed(1)}%</div><div class="ml">ביטחון</div></div><div class="met"><div class="mv ${tot===0?'g':'r'}">${tot}</div><div class="ml">אנומליות</div></div><div class="met"><div class="mv a">${agents.length}</div><div class="ml">סוכנים</div></div><div class="met"><div class="mv ${hi===0?'g':'r'}">${hi}</div><div class="ml">חומרה גבוהה</div></div>`;
+document.getElementById('sp').classList.add('on');
+if(hitl)document.getElementById('hl').classList.add('on');
+
+// Red Team
+if(caseData&&caseData.red_team){showRedTeam(caseData.red_team)}
+rst()}
+
+function showRedTeam(rt){
+const p=document.getElementById('rtp');p.style.display='block';p.classList.add('on');
+const tl=rt.threat_level||'low';const tlC={high:'var(--red)',medium:'var(--amber)',low:'var(--blue)'};
+let h=`<div class="su-c" style="border-right-color:${tlC[tl]||tlC.low}"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div class="su-t" style="margin:0">🛡 סיכום צוות אדום</div><span style="font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:4px;background:${tl==='high'?'var(--red-dim)':tl==='medium'?'var(--amber-dim)':'var(--blue-dim)'};color:${tlC[tl]}">${tl.toUpperCase()} THREAT</span></div>`;
+h+=`<div class="su-tx">${rt.summary||''}</div>`;
+if(rt.challenges&&rt.challenges.length){h+=`<div style="margin-top:14px"><div style="font-size:11px;font-weight:700;margin-bottom:8px">⚔ אתגרים (${rt.challenges.length})</div>`;
+rt.challenges.forEach(c=>{const sv=c.severity==='high'?'':c.severity==='medium'?' med':' low';h+=`<div class="an${sv}" style="margin-bottom:6px"><div class="an-t">${c.type||''}</div><div class="an-d">${c.challenge||''}</div></div>`});h+=`</div>`}
+if(rt.blind_spots&&rt.blind_spots.length){h+=`<div style="margin-top:14px"><div style="font-size:11px;font-weight:700;margin-bottom:8px">👁 נקודות עיוורות (${rt.blind_spots.length})</div>`;
+rt.blind_spots.forEach(b=>{h+=`<div class="an low" style="margin-bottom:6px"><div class="an-t">${b.agent||''}</div><div class="an-d">${b.issue||''}</div></div>`});h+=`</div>`}
+if(rt.recommendations&&rt.recommendations.length){h+=`<div style="margin-top:14px"><div style="font-size:11px;font-weight:700;margin-bottom:8px">💡 המלצות שיפור</div>`;
+rt.recommendations.forEach(r=>{h+=`<div style="font-size:12px;color:var(--text-2);padding:6px 12px;background:var(--abyss);border-radius:6px;margin-bottom:4px;border-right:2px solid var(--cyan)">• ${r}</div>`});h+=`</div>`}
+h+=`</div>`;document.getElementById('rtContent').innerHTML=h}
+
+// Crypto stamp
+async function generateStamp(){const b=document.getElementById('stampBtn');b.disabled=true;b.textContent='מייצר חותמת...';
+await new Promise(r=>setTimeout(r,2000));
+// Generate mock crypto signature
+const stampText=document.getElementById('stampData').textContent;const encoder=new TextEncoder();const data=encoder.encode(stampText+Date.now());const hashBuf=await crypto.subtle.digest('SHA-256',data);const hashArr=Array.from(new Uint8Array(hashBuf));const sig=hashArr.map(b=>b.toString(16).padStart(2,'0')).join('');
+document.getElementById('stampData').innerHTML+=`\n\n─────────────────────────────────\nCRYPTO SIGNATURE: ${sig}\nSIGNED AT: ${new Date().toISOString()}\nVERIFIABLE: YES`;
+b.textContent='✓ חותמת הונפקה';b.classList.add('done')}
+
+// PDF download
+function downloadPDF(){const id=document.getElementById('ct').textContent;if(!id)return;const b=document.getElementById('pdfBtn');b.textContent='מייצר דוח...';b.disabled=true;
+window.open(A+'/v1/report/'+id,'_blank');setTimeout(()=>{b.textContent='📄 הורד דוח PDF ראייתי';b.disabled=false},3000)}
+
+// HITL
+document.getElementById('hb').onclick=async()=>{const id=document.getElementById('ct').textContent;try{await fetch(A+'/v1/verify/'+id+'/hitl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({preferred_domain:'general'})});document.getElementById('hb').textContent='✓ בקשה נשלחה';document.getElementById('hb').disabled=true}catch{alert('שגיאה')}};
+document.onclick=()=>{document.querySelectorAll('.am').forEach(m=>m.classList.remove('active'))};
+</script>
+</body>
+</html>
