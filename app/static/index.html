@@ -143,6 +143,17 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 .results{margin-top:36px;display:none}.results.on{display:block}
 .r-card{background:var(--abyss);border:1px solid var(--border);border-radius:14px;overflow:hidden;animation:rise .6s cubic-bezier(.4,0,.2,1)}
 @keyframes rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes scaleIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+@keyframes glow{0%,100%{box-shadow:0 0 20px rgba(51,102,255,.1)}50%{box-shadow:0 0 40px rgba(51,102,255,.2)}}
+.card{animation:fadeSlide .5s ease}
+.ag-c{animation:fadeSlide .4s ease backwards}
+.ag-c:nth-child(1){animation-delay:.05s}.ag-c:nth-child(2){animation-delay:.1s}.ag-c:nth-child(3){animation-delay:.15s}.ag-c:nth-child(4){animation-delay:.2s}.ag-c:nth-child(5){animation-delay:.25s}
+.vbox{animation:scaleIn .5s ease}
+.met{animation:fadeSlide .4s ease backwards}
+.met:nth-child(1){animation-delay:.1s}.met:nth-child(2){animation-delay:.2s}.met:nth-child(3){animation-delay:.3s}.met:nth-child(4){animation-delay:.4s}
+.r-card{animation:rise .6s cubic-bezier(.4,0,.2,1);box-shadow:0 8px 40px rgba(0,0,0,.3)}
+.stamp-card{animation:glow 3s ease-in-out infinite}
 .r-head{padding:20px 28px;display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.25);border-bottom:1px solid var(--border-dim)}
 .rh-left{display:flex;align-items:center;gap:14px}
 .rh-ico{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px}
@@ -219,7 +230,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 .ag-c:hover{border-color:var(--border-bright)}
 .ag-h{padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer}
 .ag-i{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
-.ag-i.forensic_technical{background:rgba(167,139,250,.08)}.ag-i.physical{background:rgba(0,188,212,.08)}.ag-i.contextual{background:rgba(255,171,0,.08)}.ag-i.ai_generation{background:rgba(244,114,182,.08)}
+.ag-i.forensic_technical{background:rgba(167,139,250,.08)}.ag-i.physical{background:rgba(0,188,212,.08)}.ag-i.contextual{background:rgba(255,171,0,.08)}.ag-i.ai_generation{background:rgba(244,114,182,.08)}.ag-i.copy_move{background:rgba(99,179,237,.08)}
 .ag-inf{flex:1}.ag-n{font-size:13px;font-weight:600}.ag-d{font-size:10px;color:var(--text-3);margin-top:1px;font-family:var(--mono)}
 .ag-s{font-family:var(--mono);font-size:13px;font-weight:700;padding:3px 10px;border-radius:5px}
 .ag-s.high{color:var(--green);background:var(--green-dim)}.ag-s.medium{color:var(--amber);background:var(--amber-dim)}.ag-s.low{color:var(--red);background:var(--red-dim)}
@@ -394,7 +405,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 <div class="sec-lbl">תוצאות ניתוח פורנזי</div>
 <div class="r-card">
 <div class="r-head"><div class="rh-left"><div class="rh-ico" id="ri"><span class="spin"></span></div><div><div class="rh-title" id="rt">מנתח...</div><div class="rh-sub" id="rs">הקובץ נקלט למערכת</div></div></div><div class="case-tag" id="ct"></div></div>
-<div class="prog" id="prog"><div class="prog-track"><div class="prog-fill" id="pf" style="width:8%"></div></div><div class="steps"><span class="stp on" id="s1">● קליטה</span><span class="stp wait" id="s2">● פורנזי</span><span class="stp wait" id="s3">● פיזיקלי</span><span class="stp wait" id="s4">● הקשרי</span><span class="stp wait" id="s5">● AI</span><span class="stp wait" id="s6">● הצלבה</span><span class="stp wait" id="s7">● Red Team</span></div></div>
+<div class="prog" id="prog"><div class="prog-track"><div class="prog-fill" id="pf" style="width:8%"></div></div><div class="steps"><span class="stp on" id="s1">● קליטה</span><span class="stp wait" id="s2">● פורנזי</span><span class="stp wait" id="s3">● פיזיקלי</span><span class="stp wait" id="s4">● הקשרי</span><span class="stp wait" id="s5">● AI</span><span class="stp wait" id="s6">● שכפול</span><span class="stp wait" id="s7">● הצלבה</span><span class="stp wait" id="s8">● Red Team</span></div></div>
 <div class="verdict-p" id="vp"><div class="vbox" id="vb"><div class="v-badge" id="vBadge"></div><div class="v-title" id="vt"></div><div class="v-conf">ציון ביטחון: <b id="vc"></b></div></div></div>
 
 <!-- Crypto Stamp -->
@@ -484,7 +495,7 @@ try{const r=await fetch(A+'/v1/verify',{method:'POST',body:fd});const d=await r.
 function rst(){const b=document.getElementById('sub');b.disabled=false;b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> שלח לניתוח פורנזי'}
 function show(id){document.getElementById('step2Card').style.display='none';document.getElementById('res').classList.add('on');document.getElementById('ct').textContent=id;document.getElementById('wiz3').classList.add('done');document.getElementById('wiz3').querySelector('.wiz-num').textContent='✓';document.getElementById('wiz4').classList.add('active');document.getElementById('res').scrollIntoView({behavior:'smooth'})}
 
-async function run(cid){const st=[{id:'s1',p:12,ms:600},{id:'s2',p:28,ms:1800},{id:'s3',p:44,ms:1600},{id:'s4',p:58,ms:1400},{id:'s5',p:72,ms:1200},{id:'s6',p:86,ms:1000},{id:'s7',p:100,ms:1400}];
+async function run(cid){const st=[{id:'s1',p:10,ms:600},{id:'s2',p:22,ms:1800},{id:'s3',p:36,ms:1600},{id:'s4',p:48,ms:1400},{id:'s5',p:60,ms:1200},{id:'s6',p:72,ms:1400},{id:'s7',p:86,ms:1000},{id:'s8',p:100,ms:1400}];
 for(let i=0;i<st.length;i++){await new Promise(r=>setTimeout(r,st[i].ms));document.getElementById(st[i].id).className='stp on';document.getElementById('pf').style.width=st[i].p+'%';if(i>0)document.getElementById(st[i-1].id).className='stp ok'}
 document.getElementById(st[st.length-1].id).className='stp ok';document.getElementById('wiz4').classList.remove('active');document.getElementById('wiz4').classList.add('done');document.getElementById('wiz4').querySelector('.wiz-num').textContent='✓';
 try{const r=await fetch(A+'/v1/verify/'+cid);const d=await r.json();caseData={...caseData,...d};render(d)}catch{mock()}}
@@ -493,7 +504,7 @@ function render(d){document.getElementById('prog').style.display='none';document
 if(d.verdict&&d.agent_results&&d.agent_results.length>0){const ag=d.agent_results.map(a=>({agent_type:a.agent_type,confidence_score:a.confidence_score,anomalies:(a.anomalies&&a.anomalies.items)?a.anomalies.items:a.anomalies||[]}));full(d.verdict,d.confidence_score,ag,d.hitl_required);if(d.red_team)showRedTeam(d.red_team)}else if(d.verdict){full(d.verdict,d.confidence_score,[],d.hitl_required)}else{mock()}}
 
 function mock(){document.getElementById('prog').style.display='none';document.getElementById('rt').textContent='ניתוח הושלם';document.getElementById('rs').textContent='סוג: image';document.getElementById('hp').classList.add('on');document.getElementById('hv').textContent='a3f2c8e1b9d7...7b9e';
-const ag=[{agent_type:'forensic_technical',confidence_score:.71,anomalies:[{type:'ELA',description:'חריגה ברמת דחיסת JPEG באזור מרכז-שמאל. עוצמת Error Level גבוהה פי 3.4 מהצפוי — עריכה מאוחרת.',severity:'high',location:{x:35,y:45}},{type:'מטאדטה',description:'חותמת EXIF: תאריך 1943. תוכנת עריכה: Adobe Photoshop CC 2019.',severity:'high',location:{x:72,y:20}}]},{agent_type:'physical',confidence_score:.55,anomalies:[{type:'צללים',description:'כיוון צל האובייקט המרכזי (215°) סותר את הרקע (168°). פער 47°.',severity:'high',location:{x:50,y:60}},{type:'פרספקטיבה',description:'נקודות היעלמות לא תואמות. סטייה ~12°.',severity:'medium',location:{x:25,y:75}}]},{agent_type:'contextual',confidence_score:.60,anomalies:[{type:'תקופה',description:'כפתורי Bakelite הוחלפו לפלסטיק רק ב-1951. לא תואם 1942-44.',severity:'medium',location:{x:60,y:40}}]},{agent_type:'ai_generation',confidence_score:.70,anomalies:[{type:'בדיקת AI',description:'לא נמצאו סימנים חד-משמעיים ליצירה על ידי AI.',severity:'low',location:{x:50,y:50}}]}];
+const ag=[{agent_type:'forensic_technical',confidence_score:.71,anomalies:[{type:'ELA',description:'חריגה ברמת דחיסת JPEG באזור מרכז-שמאל. עוצמת Error Level גבוהה פי 3.4 מהצפוי — עריכה מאוחרת.',severity:'high',location:{x:35,y:45}},{type:'מטאדטה',description:'חותמת EXIF: תאריך 1943. תוכנת עריכה: Adobe Photoshop CC 2019.',severity:'high',location:{x:72,y:20}}]},{agent_type:'physical',confidence_score:.55,anomalies:[{type:'צללים',description:'כיוון צל האובייקט המרכזי (215°) סותר את הרקע (168°). פער 47°.',severity:'high',location:{x:50,y:60}},{type:'פרספקטיבה',description:'נקודות היעלמות לא תואמות. סטייה ~12°.',severity:'medium',location:{x:25,y:75}}]},{agent_type:'contextual',confidence_score:.60,anomalies:[{type:'תקופה',description:'כפתורי Bakelite הוחלפו לפלסטיק רק ב-1951. לא תואם 1942-44.',severity:'medium',location:{x:60,y:40}}]},{agent_type:'ai_generation',confidence_score:.70,anomalies:[{type:'בדיקת AI',description:'לא נמצאו סימנים חד-משמעיים ליצירה על ידי AI.',severity:'low',location:{x:50,y:50}}]},{agent_type:'copy_move',confidence_score:.82,anomalies:[{type:'Copy-Move',description:'זוהה אזור משוכפל: בלוק ב-(32%,45%) תואם לבלוק ב-(68%,47%) ברמת דמיון 95.2%. מרחק הזזה: 184 פיקסלים.',severity:'high',location:{x:32,y:45}}]}];
 full('inconclusive',.62,ag,true);
 // Mock red team
 showRedTeam({threat_level:'medium',summary:'צוות אדום זיהה 3 אתגרים ו-2 נקודות עיוורות. רמת איום: medium. הומלצו 2 שיפורים.',challenges:[{type:'false_positive_risk',target_agent:'forensic_technical',challenge:'אנומליית ELA עשויה להיות תוצאה של דחיסה כפולה לגיטימית (שיתוף ברשתות חברתיות/WhatsApp). יחס דחיסה מצביע על שמירות מרובות.',severity:'medium'},{type:'consistency_gap',challenge:'פער משמעותי (16%) בין forensic_technical (71%) ל-physical (55%). אחד מהם עלול לטעות.',severity:'high'},{type:'cross_disagreement',challenge:'הפורנזי וההקשרי חלוקים. ייתכן זיוף מתוחכם שעבר רק שכבה אחת, או false positive בשכבה אחרת.',severity:'medium'}],blind_spots:[{agent:'system',issue:'לא בוצע ניתוח copy-move/clone detection. טכניקת זיוף נפוצה שעלולה לחמוק מהסוכנים הנוכחיים.',risk:'missing_capability'},{agent:'physical',issue:'סוכן physical דיווח ביטחון 55% — רמת אמינות נמוכה. נדרש ניתוח מעמיק יותר.',risk:'low_confidence'}],recommendations:['נמצאו אתגרים ברמה גבוהה — מומלץ לשלב מומחה HITL לאימות.','זוהו מספר נקודות עיוורות. שקול להרחיב את סט הסוכנים (clone detection, frequency analysis).']})}
@@ -521,10 +532,10 @@ m.innerHTML=`<div class="mr ${an.severity}"><span class="mn">${n}</span></div><d
 m.onclick=e=>{e.stopPropagation();document.querySelectorAll('.am').forEach(x=>x.classList.remove('active'));m.classList.toggle('active')};ov.appendChild(m);n++})}}
 
 // Agents
-const meta={forensic_technical:{n:'סוכן פורנזי-טכני',d:'ELA · EXIF · דחיסה · גרעון',i:'🔬'},physical:{n:'סוכן פיזיקלי',d:'צללים · תאורה · פרספקטיבה',i:'💡'},contextual:{n:'סוכן הקשרי',d:'מדים · טכנולוגיה · תקופה',i:'🏛'},ai_generation:{n:'סוכן זיהוי מנוע AI',d:'DALL-E · Midjourney · SD',i:'🤖'}};
+const meta={forensic_technical:{n:'סוכן פורנזי-טכני',d:'ELA · EXIF · דחיסה · גרעון',i:'🔬'},physical:{n:'סוכן פיזיקלי',d:'צללים · תאורה · פרספקטיבה',i:'💡'},contextual:{n:'סוכן הקשרי',d:'מדים · טכנולוגיה · תקופה',i:'🏛'},ai_generation:{n:'סוכן זיהוי מנוע AI',d:'DALL-E · Midjourney · SD',i:'🤖'},copy_move:{n:'סוכן זיהוי שכפול',d:'Copy-Move · Clone Detection',i:'🔍'}};
 document.getElementById('al').innerHTML=agents.map(a=>{const m=meta[a.agent_type]||{n:a.agent_type,d:'',i:'●'};const sc=a.confidence_score>=.8?'high':a.confidence_score>=.6?'medium':'low';
 const ah=(a.anomalies||[]).map(an=>{const sv=an.severity==='high'?'':an.severity==='medium'?' med':' low';return`<div class="an${sv}"><div class="an-t">${an.type||'ממצא'}</div><div class="an-d">${an.description}</div></div>`}).join('');
-return`<div class="ag-c" onclick="this.classList.toggle('open')"><div class="ag-h"><div class="ag-i ${a.agent_type}">${m.i}</div><div class="ag-inf"><div class="ag-n">${m.n}</div><div class="ag-d">${m.d}</div></div><div class="ag-s ${sc}">${(a.confidence_score*100).toFixed(0)}%</div><div class="ag-arr">▾</div></div><div class="ag-b"><div class="ag-bi">${ah||'<div style="font-size:12px;color:var(--text-3)">לא זוהו חריגות</div>'}</div></div></div>`}).join('');
+return`<div class="ag-c" onclick="this.classList.toggle('open')"><div class="ag-h"><div class="ag-i ${a.agent_type}">${m.i}</div><div class="ag-inf"><div class="ag-n">${m.n}</div><div class="ag-d">${m.d}</div></div><div style="display:flex;align-items:center;gap:8px"><div style="width:60px;height:6px;background:var(--deep);border-radius:3px;overflow:hidden"><div style="height:100%;width:${a.confidence_score*100}%;background:${sc==='high'?'var(--green)':sc==='medium'?'var(--amber)':'var(--red)'};border-radius:3px;transition:width 1s ease"></div></div><div class="ag-s ${sc}">${(a.confidence_score*100).toFixed(0)}%</div></div><div class="ag-arr">▾</div></div><div class="ag-b"><div class="ag-bi">${ah||'<div style="font-size:12px;color:var(--text-3)">לא זוהו חריגות</div>'}</div></div></div>`}).join('');
 document.getElementById('ap').classList.add('on');
 
 // Summary

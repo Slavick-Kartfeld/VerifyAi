@@ -8,10 +8,11 @@ class CrossReferenceEngine:
 
     # משקלות לכל סוכן
     WEIGHTS = {
-        "forensic_technical": 0.35,
-        "physical": 0.25,
-        "contextual": 0.20,
-        "ai_generation": 0.20,
+        "forensic_technical": 0.30,
+        "physical": 0.20,
+        "contextual": 0.18,
+        "ai_generation": 0.17,
+        "copy_move": 0.15,
     }
 
     CONFIDENCE_THRESHOLD = 0.75  # מעל = אותנטי, מתחת = inconclusive/forged
