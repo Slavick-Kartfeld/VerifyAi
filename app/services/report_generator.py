@@ -270,6 +270,83 @@ def generate_report(
     story.append(ct)
     story.append(Spacer(1, 16))
 
+    # ─── AGENT CONFIDENCE CHART (horizontal bars) ───
+    story.append(Paragraph("Agent Confidence Overview", s["h2"]))
+
+    chart_data = []
+    for ar in agent_results:
+        atype = ar.get("agent_type", "unknown")
+        aname = agent_names.get(atype, atype)
+        ascore = ar.get("confidence_score", 0)
+        bar_color = GREEN if ascore >= 0.8 else AMBER if ascore >= 0.6 else RED
+        chart_data.append([aname, ascore, bar_color])
+
+    if chart_data:
+        bar_rows = []
+        for name, score, color in chart_data:
+            # Create a visual bar using a colored table cell
+            bar_rows.append([
+                Paragraph(name, s["body_small"]),
+                Paragraph(f"{score:.0%}", s["mono"]),
+            ])
+
+        bar_table = Table(bar_rows, colWidths=[55*mm, 105*mm])
+        bar_table.setStyle(TableStyle([
+            ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("LINEBELOW", (0, 0), (-1, -1), 0.5, BORDER),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ]))
+        # Add colored backgrounds based on score
+        for i, (name, score, color) in enumerate(chart_data):
+            bar_table.setStyle(TableStyle([
+                ("TEXTCOLOR", (1, i), (1, i), color),
+                ("FONTNAME", (1, i), (1, i), "Courier-Bold"),
+            ]))
+        story.append(bar_table)
+    story.append(Spacer(1, 16))
+
+    # ─── RED TEAM ANALYSIS ───
+    story.append(Paragraph("Red Team Adversarial Report", s["h2"]))
+
+    # Red team data may come from cross_reference or separately
+    rt_challenges = cross_reference.get("red_team_challenges", [])
+    rt_blind_spots = cross_reference.get("red_team_blind_spots", [])
+    rt_recs = cross_reference.get("red_team_recommendations", [])
+    rt_threat = cross_reference.get("red_team_threat", "N/A")
+
+    if rt_challenges or rt_blind_spots or rt_recs:
+        story.append(Paragraph(f"Threat Level: {rt_threat.upper()}", s["h3"]))
+        story.append(Spacer(1, 4))
+
+        if rt_challenges:
+            story.append(Paragraph(f"Challenges ({len(rt_challenges)}):", s["body_small"]))
+            for ch in rt_challenges[:5]:
+                desc = ch.get("challenge", "") if isinstance(ch, dict) else str(ch)
+                sev = ch.get("severity", "medium") if isinstance(ch, dict) else "medium"
+                story.append(Paragraph(f"  [{sev.upper()}] {desc[:150]}", s["body_small"]))
+            story.append(Spacer(1, 6))
+
+        if rt_blind_spots:
+            story.append(Paragraph(f"Blind Spots ({len(rt_blind_spots)}):", s["body_small"]))
+            for bs in rt_blind_spots[:5]:
+                issue = bs.get("issue", "") if isinstance(bs, dict) else str(bs)
+                story.append(Paragraph(f"  - {issue[:150]}", s["body_small"]))
+            story.append(Spacer(1, 6))
+
+        if rt_recs:
+            story.append(Paragraph("Recommendations:", s["body_small"]))
+            for rec in rt_recs[:5]:
+                story.append(Paragraph(f"  > {rec[:150]}", s["body_small"]))
+    else:
+        story.append(Paragraph("Red Team analysis data not available for this report. "
+                              "Red Team adversarial validation runs on every analysis to challenge findings, "
+                              "identify blind spots, and recommend improvements.", s["body_small"]))
+
+    story.append(Spacer(1, 16))
+
     # ─── CRYPTOGRAPHIC STAMP ───
     story.append(Paragraph("Cryptographic Verification Stamp", s["h2"]))
 

@@ -208,11 +208,32 @@ async def download_report(case_id: str, db: AsyncSession = Depends(get_db)):
         select(CrossReferenceResult).where(CrossReferenceResult.case_id == case_id)
     )
     cr = cr_result.scalar_one_or_none()
+
+    # Extract Red Team data from agent results
+    rt_data = next((ar for ar in agent_results if ar["agent_type"] == "red_team"), None)
+    rt_challenges = []
+    rt_blind_spots = []
+    rt_recs = []
+    rt_threat = "N/A"
+    if rt_data and rt_data.get("anomalies"):
+        rt_challenges = rt_data["anomalies"].get("challenges", [])
+        rt_blind_spots = rt_data["anomalies"].get("blind_spots", [])
+        rt_recs = rt_data["anomalies"].get("recommendations", [])
+    if rt_data and rt_data.get("findings"):
+        rt_threat = rt_data["findings"].get("threat_level", "N/A")
+
+    # Filter out red_team from agent_results for main report
+    agent_results = [ar for ar in agent_results if ar["agent_type"] != "red_team"]
+
     cross_ref = {
         "combined_score": cr.combined_score if cr else 0,
         "reasoning": cr.reasoning if cr else "",
         "final_verdict": cr.final_verdict if cr else "",
         "anomaly_summary": {},
+        "red_team_challenges": rt_challenges,
+        "red_team_blind_spots": rt_blind_spots,
+        "red_team_recommendations": rt_recs,
+        "red_team_threat": rt_threat,
     }
 
     from app.services.report_generator import generate_report
