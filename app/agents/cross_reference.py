@@ -8,14 +8,15 @@ class CrossReferenceEngine:
 
     # משקלות לכל סוכן
     WEIGHTS = {
-        "forensic_technical": 0.20,
-        "physical": 0.14,
-        "contextual": 0.12,
-        "ai_generation": 0.12,
-        "copy_move": 0.10,
-        "frequency_analysis": 0.10,
-        "audio_deepfake": 0.08,
-        "video_forensic": 0.08,
+        "forensic_technical": 0.18,
+        "physical": 0.13,
+        "contextual": 0.11,
+        "ai_generation": 0.11,
+        "copy_move": 0.09,
+        "frequency_analysis": 0.09,
+        "metadata_consistency": 0.09,
+        "audio_deepfake": 0.07,
+        "video_forensic": 0.07,
         "document_forensic": 0.06,
     }
 

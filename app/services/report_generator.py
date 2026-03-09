@@ -193,6 +193,7 @@ def generate_report(
         "audio_deepfake": "Audio Deepfake Detection Agent",
         "video_forensic": "Video Forensic Agent",
         "document_forensic": "Document Forensic Agent",
+        "metadata_consistency": "Metadata Consistency Agent",
     }
     agent_descs = {
         "forensic_technical": "ELA, EXIF metadata, compression analysis, grain analysis",
@@ -204,6 +205,7 @@ def generate_report(
         "audio_deepfake": "Spectral analysis, TTS detection, voice cloning artifacts",
         "video_forensic": "Frame extraction, temporal consistency, scene cut detection",
         "document_forensic": "Metadata, font analysis, digital signatures, structure checks",
+        "metadata_consistency": "EXIF cross-check, GPS vs timezone, camera vs resolution, dates, ICC profiles",
     }
 
     for ar in agent_results:
