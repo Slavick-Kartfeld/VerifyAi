@@ -8,6 +8,8 @@ from app.agents.vision_agents import PhysicalAgent, ContextualAgent, AIGeneratio
 from app.agents.cross_reference import CrossReferenceEngine
 from app.agents.red_team_agent import RedTeamAgent
 from app.agents.copy_move_agent import CopyMoveAgent
+from app.agents.frequency_agent import FrequencyAnalysisAgent
+from app.agents.audio_agent import AudioDeepfakeAgent
 
 
 class Orchestrator:
@@ -18,6 +20,8 @@ class Orchestrator:
         self.contextual = ContextualAgent()
         self.ai_gen = AIGenerationAgent()
         self.copy_move = CopyMoveAgent()
+        self.frequency = FrequencyAnalysisAgent()
+        self.audio = AudioDeepfakeAgent()
         self.cross_ref = CrossReferenceEngine()
         self.red_team = RedTeamAgent()
 
@@ -59,11 +63,11 @@ class Orchestrator:
 
     def _select_agents(self, media_type: str) -> list:
         if media_type == "image":
-            return [self.forensic, self.physical, self.contextual, self.ai_gen, self.copy_move]
+            return [self.forensic, self.physical, self.contextual, self.ai_gen, self.copy_move, self.frequency]
         elif media_type == "video":
-            return [self.forensic, self.physical, self.contextual]
+            return [self.forensic, self.physical, self.contextual, self.frequency]
         elif media_type == "audio":
-            return [self.forensic]
+            return [self.forensic, self.audio]
         elif media_type == "document":
             return [self.forensic, self.contextual]
         return [self.forensic]

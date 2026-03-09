@@ -189,6 +189,8 @@ def generate_report(
         "contextual": "Contextual Agent",
         "ai_generation": "AI Generation Detection Agent",
         "copy_move": "Copy-Move Detection Agent",
+        "frequency_analysis": "Frequency Analysis Agent",
+        "audio_deepfake": "Audio Deepfake Detection Agent",
     }
     agent_descs = {
         "forensic_technical": "ELA, EXIF metadata, compression analysis, grain analysis",
@@ -196,6 +198,8 @@ def generate_report(
         "contextual": "Historical context, uniforms, technology, architecture, vegetation",
         "ai_generation": "AI-generated content detection (DALL-E, Midjourney, Stable Diffusion)",
         "copy_move": "Clone region detection via block-matching and DCT features",
+        "frequency_analysis": "DCT spectral analysis, JPEG grid consistency, noise uniformity",
+        "audio_deepfake": "Spectral analysis, TTS detection, voice cloning artifacts",
     }
 
     for ar in agent_results:
