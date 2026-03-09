@@ -10,6 +10,8 @@ from app.agents.red_team_agent import RedTeamAgent
 from app.agents.copy_move_agent import CopyMoveAgent
 from app.agents.frequency_agent import FrequencyAnalysisAgent
 from app.agents.audio_agent import AudioDeepfakeAgent
+from app.agents.video_agent import VideoForensicAgent
+from app.agents.document_agent import DocumentForensicAgent
 
 
 class Orchestrator:
@@ -22,6 +24,8 @@ class Orchestrator:
         self.copy_move = CopyMoveAgent()
         self.frequency = FrequencyAnalysisAgent()
         self.audio = AudioDeepfakeAgent()
+        self.video = VideoForensicAgent()
+        self.document = DocumentForensicAgent()
         self.cross_ref = CrossReferenceEngine()
         self.red_team = RedTeamAgent()
 
@@ -65,11 +69,11 @@ class Orchestrator:
         if media_type == "image":
             return [self.forensic, self.physical, self.contextual, self.ai_gen, self.copy_move, self.frequency]
         elif media_type == "video":
-            return [self.forensic, self.physical, self.contextual, self.frequency]
+            return [self.forensic, self.physical, self.contextual, self.video, self.frequency]
         elif media_type == "audio":
             return [self.forensic, self.audio]
         elif media_type == "document":
-            return [self.forensic, self.contextual]
+            return [self.forensic, self.contextual, self.document]
         return [self.forensic]
 
     def _final_verdict(self, cross_ref: dict, red_team: dict) -> dict:

@@ -15,10 +15,10 @@ def compute_sha256(file_bytes: bytes) -> str:
 def detect_media_type(filename: str) -> str:
     """זיהוי סוג מדיה לפי סיומת"""
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
-    image_exts = {"jpg", "jpeg", "png", "bmp", "tiff", "webp"}
-    video_exts = {"mp4", "avi", "mov", "mkv", "webm"}
-    audio_exts = {"mp3", "wav", "ogg", "flac", "m4a"}
-    doc_exts = {"pdf", "doc", "docx", "txt", "tif", "tiff"}
+    image_exts = {"jpg", "jpeg", "png", "bmp", "tiff", "tif", "webp", "gif", "heic", "heif"}
+    video_exts = {"mp4", "avi", "mov", "mkv", "webm", "wmv", "flv", "m4v"}
+    audio_exts = {"mp3", "wav", "ogg", "flac", "m4a", "aac", "wma"}
+    doc_exts = {"pdf", "doc", "docx", "txt", "rtf", "odt", "xls", "xlsx"}
 
     if ext in image_exts:
         return "image"

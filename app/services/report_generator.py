@@ -191,6 +191,8 @@ def generate_report(
         "copy_move": "Copy-Move Detection Agent",
         "frequency_analysis": "Frequency Analysis Agent",
         "audio_deepfake": "Audio Deepfake Detection Agent",
+        "video_forensic": "Video Forensic Agent",
+        "document_forensic": "Document Forensic Agent",
     }
     agent_descs = {
         "forensic_technical": "ELA, EXIF metadata, compression analysis, grain analysis",
@@ -200,6 +202,8 @@ def generate_report(
         "copy_move": "Clone region detection via block-matching and DCT features",
         "frequency_analysis": "DCT spectral analysis, JPEG grid consistency, noise uniformity",
         "audio_deepfake": "Spectral analysis, TTS detection, voice cloning artifacts",
+        "video_forensic": "Frame extraction, temporal consistency, scene cut detection",
+        "document_forensic": "Metadata, font analysis, digital signatures, structure checks",
     }
 
     for ar in agent_results:
