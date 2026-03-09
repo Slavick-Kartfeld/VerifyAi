@@ -331,16 +331,7 @@ html[dir="ltr"] .disc::before{right:auto;left:0}
 </div>
 <div id="progStatus" style="font-size:13px;color:var(--text-2);margin-bottom:16px" data-i="analyzing">Analyzing...</div>
 </div>
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 12px;margin-bottom:8px" id="agentGrid">
-<div class="ag-live on" id="al1"><div class="ag-live-ico">📥</div><div class="ag-live-name" data-i="st_ingest">Ingest</div><div class="ag-live-bar"><div class="ag-live-fill" id="af1"></div></div></div>
-<div class="ag-live" id="al2"><div class="ag-live-ico">🔬</div><div class="ag-live-name" data-i="st_forensic">Forensic</div><div class="ag-live-bar"><div class="ag-live-fill" id="af2"></div></div></div>
-<div class="ag-live" id="al3"><div class="ag-live-ico">💡</div><div class="ag-live-name" data-i="st_physical">Physical</div><div class="ag-live-bar"><div class="ag-live-fill" id="af3"></div></div></div>
-<div class="ag-live" id="al4"><div class="ag-live-ico">🏛</div><div class="ag-live-name" data-i="st_context">Context</div><div class="ag-live-bar"><div class="ag-live-fill" id="af4"></div></div></div>
-<div class="ag-live" id="al5"><div class="ag-live-ico">🤖</div><div class="ag-live-name">AI</div><div class="ag-live-bar"><div class="ag-live-fill" id="af5"></div></div></div>
-<div class="ag-live" id="al6"><div class="ag-live-ico">🔍</div><div class="ag-live-name" data-i="st_clone">Clone</div><div class="ag-live-bar"><div class="ag-live-fill" id="af6"></div></div></div>
-<div class="ag-live" id="al7"><div class="ag-live-ico">⚖</div><div class="ag-live-name" data-i="st_cross">Cross-Ref</div><div class="ag-live-bar"><div class="ag-live-fill" id="af7"></div></div></div>
-<div class="ag-live" id="al8"><div class="ag-live-ico">🔴</div><div class="ag-live-name">Red Team</div><div class="ag-live-bar"><div class="ag-live-fill" id="af8"></div></div></div>
-</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 12px;margin-bottom:8px" id="agentGrid"></div>
 </div>
 <div class="verdict-p" id="vp"><div class="vbox" id="vb"><div class="v-badge" id="vBadge"></div><div class="v-title" id="vt"></div><div class="v-conf"><span data-i="confidence_score">Confidence Score</span>: <b id="vc"></b></div></div></div>
 
@@ -475,17 +466,30 @@ document.getElementById('fpX').onclick=()=>{sel=null;fi.value='';document.getEle
 document.getElementById('sub').onclick=async()=>{if(!sel)return;const b=document.getElementById('sub');b.disabled=true;b.innerHTML='<span class="spin"></span> '+t('analyzing');const info=currentType==='person'?{type:'person',name:document.getElementById('firstName').value+' '+document.getElementById('lastName').value,id_type:document.getElementById('idType').value,id_number:document.getElementById('idNumber').value,email:document.getElementById('email').value,phone:document.getElementById('phone').value}:{type:'company',company:document.getElementById('companyName').value,entity_type:document.getElementById('entityType').value,reg_number:document.getElementById('companyNumber').value,contact:document.getElementById('contactName').value,role:document.getElementById('contactRole').value,email:document.getElementById('companyEmail').value,phone:document.getElementById('phone').value};const fd=new FormData();fd.append('file',sel);fd.append('client_id',info.id_number||info.reg_number||'anon');const c=document.getElementById('ctx').value;if(c)fd.append('context',c);try{const r=await fetch(A+'/v1/verify',{method:'POST',body:fd});const d=await r.json();if(r.ok){caseData={...d,requester:info};show(d.case_id);run(d.case_id)}else{alert(d.detail||'Error');rst()}}catch(e){alert(e.message);rst()}};
 function rst(){const b=document.getElementById('sub');b.disabled=false;b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> '+t('btn_submit')}
 function show(id){document.getElementById('step2Card').style.display='none';document.getElementById('res').classList.add('on');document.getElementById('ct').textContent=id;document.getElementById('wiz3').classList.add('done');document.getElementById('wiz3').querySelector('.wiz-num').textContent='✓';document.getElementById('wiz4').classList.add('active');document.getElementById('res').scrollIntoView({behavior:'smooth'})}
-async function run(cid){const steps=[{id:1,p:10,ms:600},{id:2,p:22,ms:1800},{id:3,p:36,ms:1600},{id:4,p:48,ms:1400},{id:5,p:60,ms:1200},{id:6,p:72,ms:1400},{id:7,p:86,ms:1000},{id:8,p:100,ms:1400}];const circ=document.getElementById('progCircle');const pct=document.getElementById('progPct');
-for(let i=0;i<steps.length;i++){const s=steps[i];await new Promise(r=>setTimeout(r,s.ms));
-// Update circular progress
-const offset=327-(327*s.p/100);circ.style.strokeDashoffset=offset;pct.textContent=s.p+'%';
-// Activate agent card
-const card=document.getElementById('al'+s.id);const fill=document.getElementById('af'+s.id);
-if(i>0){const prev=document.getElementById('al'+(s.id-1));prev.classList.remove('on');prev.classList.add('done')}
+async function run(cid){
+// Define agent sets per media type
+const agentSets={
+image:[{ico:'📥',key:'st_ingest',fb:'Ingest'},{ico:'🔬',key:'st_forensic',fb:'Forensic'},{ico:'💡',key:'st_physical',fb:'Physical'},{ico:'🏛',key:'st_context',fb:'Context'},{ico:'🤖',key:'',fb:'AI'},{ico:'🔍',key:'st_clone',fb:'Clone'},{ico:'📊',key:'',fb:'Frequency'},{ico:'⚖',key:'st_cross',fb:'Cross-Ref'},{ico:'🔴',key:'',fb:'Red Team'}],
+video:[{ico:'📥',key:'st_ingest',fb:'Ingest'},{ico:'🔬',key:'st_forensic',fb:'Forensic'},{ico:'💡',key:'st_physical',fb:'Physical'},{ico:'🏛',key:'st_context',fb:'Context'},{ico:'🎬',key:'',fb:'Video'},{ico:'📊',key:'',fb:'Frequency'},{ico:'⚖',key:'st_cross',fb:'Cross-Ref'},{ico:'🔴',key:'',fb:'Red Team'}],
+audio:[{ico:'📥',key:'st_ingest',fb:'Ingest'},{ico:'🔬',key:'st_forensic',fb:'Forensic'},{ico:'🎵',key:'',fb:'Audio'},{ico:'⚖',key:'st_cross',fb:'Cross-Ref'},{ico:'🔴',key:'',fb:'Red Team'}],
+document:[{ico:'📥',key:'st_ingest',fb:'Ingest'},{ico:'🔬',key:'st_forensic',fb:'Forensic'},{ico:'🏛',key:'st_context',fb:'Context'},{ico:'📄',key:'',fb:'Document'},{ico:'⚖',key:'st_cross',fb:'Cross-Ref'},{ico:'🔴',key:'',fb:'Red Team'}]};
+const mtype=sel?mt(sel):'image';
+const agents=agentSets[mtype]||agentSets.image;
+// Build grid
+const grid=document.getElementById('agentGrid');
+grid.style.gridTemplateColumns=`repeat(${Math.min(agents.length,4)},1fr)`;
+grid.innerHTML=agents.map((a,i)=>`<div class="ag-live${i===0?' on':''}" id="al${i+1}"><div class="ag-live-ico">${a.ico}</div><div class="ag-live-name">${a.key?t(a.key):a.fb}</div><div class="ag-live-bar"><div class="ag-live-fill" id="af${i+1}"></div></div></div>`).join('');
+// Animate
+const circ=document.getElementById('progCircle');const pctEl=document.getElementById('progPct');
+const total=agents.length;
+for(let i=0;i<total;i++){const pct=Math.round(((i+1)/total)*100);const ms=i===0?600:800+Math.random()*800;
+await new Promise(r=>setTimeout(r,ms));
+const offset=327-(327*pct/100);circ.style.strokeDashoffset=offset;pctEl.textContent=pct+'%';
+const card=document.getElementById('al'+(i+1));const fill=document.getElementById('af'+(i+1));
+if(i>0){const prev=document.getElementById('al'+i);prev.classList.remove('on');prev.classList.add('done')}
 card.classList.add('on');fill.style.width='70%';
-await new Promise(r=>setTimeout(r,300));fill.style.width='100%';
+await new Promise(r=>setTimeout(r,250));fill.style.width='100%';
 }
-// Finish all
 document.querySelectorAll('.ag-live').forEach(c=>{c.classList.remove('on');c.classList.add('done')});
 document.getElementById('wiz4').classList.remove('active');document.getElementById('wiz4').classList.add('done');document.getElementById('wiz4').querySelector('.wiz-num').textContent='✓';
 try{const r=await fetch(A+'/v1/verify/'+cid);const d=await r.json();caseData={...caseData,...d};render(d)}catch{mock()}}
@@ -499,7 +503,7 @@ document.getElementById('al').innerHTML=agents.map(a=>{const m=meta[a.agent_type
 const tot=agents.reduce((s,a)=>s+(a.anomalies?a.anomalies.length:0),0);const hi=agents.reduce((s,a)=>s+(a.anomalies?a.anomalies.filter(x=>x.severity==='high').length:0),0);const vh=v==='authentic'?'Authentic':v==='forged'?'Forged':'Inconclusive';
 document.getElementById('st').innerHTML=t('d_summary_tpl').replace('%a',agents.length).replace('%t',tot).replace('%h',hi).replace('%c',(c*100).toFixed(1)).replace('%v',vh)+(hitl?t('d_hitl_note'):'');
 document.getElementById('sm').innerHTML=`<div class="met"><div class="mv ${c>=.75?'g':c>=.5?'a':'r'}">${(c*100).toFixed(1)}%</div><div class="ml">${t('d_confidence')}</div></div><div class="met"><div class="mv ${tot===0?'g':'r'}">${tot}</div><div class="ml">${t('d_anom')}</div></div><div class="met"><div class="mv a">${agents.length}</div><div class="ml">${t('d_agents_lbl')}</div></div><div class="met"><div class="mv ${hi===0?'g':'r'}">${hi}</div><div class="ml">${t('d_high_sev_lbl')}</div></div>`;
-document.getElementById('sp').classList.add('on');if(hitl)document.getElementById('hl').classList.add('on');if(caseData&&caseData.red_team){showRedTeam(caseData.red_team)}rst()}
+document.getElementById('sp').classList.add('on');if(hitl)document.getElementById('hl').classList.add('on');if(caseData&&caseData.red_team){showRedTeam(caseData.red_team)}applyLang();rst()}
 function showRedTeam(rt){const p=document.getElementById('rtp');p.style.display='block';p.classList.add('on');const tl=rt.threat_level||'low';const tlC={high:'var(--red)',medium:'var(--amber)',low:'var(--blue)'};let h=`<div class="su-c" style="border-right-color:${tlC[tl]||tlC.low}"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div class="su-t" style="margin:0">🛡 ${t('rt_summary')}</div><span style="font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:4px;background:${tl==='high'?'var(--red-dim)':tl==='medium'?'var(--amber-dim)':'var(--blue-dim)'};color:${tlC[tl]}">${tl.toUpperCase()} THREAT</span></div>`;h+=`<div class="su-tx">${rt.summary||''}</div>`;if(rt.challenges&&rt.challenges.length){h+=`<div style="margin-top:14px"><div style="font-size:11px;font-weight:700;margin-bottom:8px">⚔ ${t('rt_challenges')} (${rt.challenges.length})</div>`;rt.challenges.forEach(c=>{const sv=c.severity==='high'?'':c.severity==='medium'?' med':' low';h+=`<div class="an${sv}" style="margin-bottom:6px"><div class="an-t">${c.type||''}</div><div class="an-d">${c.challenge||''}</div></div>`});h+=`</div>`}if(rt.blind_spots&&rt.blind_spots.length){h+=`<div style="margin-top:14px"><div style="font-size:11px;font-weight:700;margin-bottom:8px">👁 ${t('rt_blindspots')} (${rt.blind_spots.length})</div>`;rt.blind_spots.forEach(b=>{h+=`<div class="an low" style="margin-bottom:6px"><div class="an-t">${b.agent||''}</div><div class="an-d">${b.issue||''}</div></div>`});h+=`</div>`}if(rt.recommendations&&rt.recommendations.length){h+=`<div style="margin-top:14px"><div style="font-size:11px;font-weight:700;margin-bottom:8px">💡 ${t('rt_recs')}</div>`;rt.recommendations.forEach(r=>{h+=`<div style="font-size:12px;color:var(--text-2);padding:6px 12px;background:var(--abyss);border-radius:6px;margin-bottom:4px;border-right:2px solid var(--cyan)">• ${r}</div>`});h+=`</div>`}h+=`</div>`;document.getElementById('rtContent').innerHTML=h}
 async function generateStamp(){const b=document.getElementById('stampBtn');b.disabled=true;b.textContent=t('d_stamp_gen');await new Promise(r=>setTimeout(r,2000));const stampText=document.getElementById('stampData').textContent;const encoder=new TextEncoder();const data=encoder.encode(stampText+Date.now());const hashBuf=await crypto.subtle.digest('SHA-256',data);const hashArr=Array.from(new Uint8Array(hashBuf));const sig=hashArr.map(b=>b.toString(16).padStart(2,'0')).join('');document.getElementById('stampData').innerHTML+=`\n\n─────────────────────────────────\nCRYPTO SIGNATURE: ${sig}\nSIGNED AT: ${new Date().toISOString()}\nVERIFIABLE: YES`;b.textContent=t('d_stamp_done');b.classList.add('done')}
 function downloadPDF(){const id=document.getElementById('ct').textContent;if(!id)return;const b=document.getElementById('pdfBtn');b.textContent=t('d_gen_report');b.disabled=true;window.open(A+'/v1/report/'+id,'_blank');setTimeout(()=>{b.innerHTML='📄 '+t('btn_pdf');b.disabled=false},3000)}
