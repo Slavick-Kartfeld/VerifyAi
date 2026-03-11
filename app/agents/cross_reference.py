@@ -27,7 +27,7 @@ class CrossReferenceEngine:
             return {
                 "combined_score": 0.5,
                 "final_verdict": "inconclusive",
-                "reasoning": "לא התקבלו ממצאים מסוכנים."
+                "reasoning": "No agent findings received."
             }
 
         # חישוב ציון משוקלל
@@ -64,12 +64,12 @@ class CrossReferenceEngine:
         # בניית נימוק
         reasoning_parts = []
         reasoning_parts.append(
-            f"הופעלו {len(agent_results)} סוכני ניתוח. "
-            f"ציון ביטחון משוקלל: {combined_score:.1%}."
+            f"{len(agent_results)} forensic agents deployed. "
+            f"Weighted confidence score: {combined_score:.1%}."
         )
         reasoning_parts.append(
-            f"זוהו {total_count} אנומליות: "
-            f"{high_count} בחומרה גבוהה, {medium_count} בחומרה בינונית."
+            f"{total_count} anomalies detected: "
+            f"{high_count} high severity, {medium_count} medium severity."
         )
 
         # בדיקת הסכמה בין סוכנים
@@ -79,14 +79,14 @@ class CrossReferenceEngine:
         ]
         if low_confidence_agents:
             agent_names = {
-                "forensic_technical": "פורנזי-טכני",
-                "physical": "פיזיקלי",
-                "contextual": "הקשרי",
-                "ai_generation": "זיהוי AI"
+                "forensic_technical": "Forensic-Technical",
+                "physical": "Physical",
+                "contextual": "Contextual",
+                "ai_generation": "AI Detection"
             }
             names = [agent_names.get(a, a) for a in low_confidence_agents]
             reasoning_parts.append(
-                f"ציון נמוך בסוכנים: {', '.join(names)}."
+                f"Low confidence scores in agents: {', '.join(names)}."
             )
 
         # בדיקת AI generation
@@ -95,10 +95,10 @@ class CrossReferenceEngine:
                 findings = result.get("findings", {})
                 if findings.get("is_ai_generated"):
                     tool = findings.get("likely_tool", "לא ידוע")
-                    reasoning_parts.append(f"התמונה זוהתה כנוצרת על ידי AI (כלי: {tool}).")
+                    reasoning_parts.append(f"Image identified as AI-generated (tool: {tool}).")
 
         if verdict == "inconclusive":
-            reasoning_parts.append("מומלץ לשלב מומחה אנושי (HITL) לאימות הממצאים.")
+            reasoning_parts.append("Human expert (HITL) verification recommended for these findings.")
 
         reasoning = " ".join(reasoning_parts)
 
