@@ -78,7 +78,7 @@ section{padding:100px 48px;max-width:1200px;margin:0 auto}
 .agents-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 .ag-card{background:var(--deep);border:1px solid rgba(255,255,255,.04);border-radius:12px;padding:24px;transition:.3s;cursor:default}
 .ag-card:hover{border-color:rgba(51,102,255,.12);box-shadow:0 12px 40px rgba(0,0,0,.2)}
-.ag-icon{font-size:28px;margin-bottom:12px}
+.ag-icon{width:36px;height:36px;margin-bottom:12px;display:flex;align-items:center;justify-content:center;color:var(--blue)}.ag-icon svg{stroke:currentColor;stroke-width:1.8;fill:none;width:28px;height:28px}
 .ag-name{font-size:14px;font-weight:700;margin-bottom:4px}
 .ag-desc{font-size:12px;color:var(--text3);line-height:1.5;font-family:var(--mono);letter-spacing:.2px}
 .ag-badge{display:inline-block;margin-top:10px;font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:3px;letter-spacing:1px;text-transform:uppercase}
@@ -90,7 +90,7 @@ section{padding:100px 48px;max-width:1200px;margin:0 auto}
 .diff-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
 .d-card{display:flex;gap:20px;background:var(--deep);border:1px solid rgba(255,255,255,.04);border-radius:14px;padding:28px;transition:.3s}
 .d-card:hover{border-color:rgba(51,102,255,.1)}
-.d-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;background:rgba(51,102,255,.06);border:1px solid rgba(51,102,255,.08)}
+.d-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(51,102,255,.06);border:1px solid rgba(51,102,255,.08);color:var(--blue)}.d-icon svg{stroke:currentColor;stroke-width:1.8;fill:none;width:22px;height:22px}
 .d-title{font-size:15px;font-weight:700;margin-bottom:6px}
 .d-text{font-size:13px;color:var(--text2);line-height:1.6}
 
@@ -171,15 +171,15 @@ footer{flex-direction:column;gap:16px;text-align:center}
 <div class="sec-title">9 agents. One verdict.<br>Every dimension covered.</div>
 <div class="sec-sub">Each agent is a specialist. Together they see what no single model can.</div>
 <div class="agents-grid">
-<div class="ag-card"><div class="ag-icon">🔬</div><div class="ag-name">Forensic-Technical</div><div class="ag-desc">ELA · EXIF · Compression · Grain</div><span class="ag-badge local">Local Analysis</span></div>
-<div class="ag-card"><div class="ag-icon">💡</div><div class="ag-name">Physical Analysis</div><div class="ag-desc">Shadows · Lighting · Perspective</div><span class="ag-badge ai">Claude Vision</span></div>
-<div class="ag-card"><div class="ag-icon">🏛</div><div class="ag-name">Historical Context</div><div class="ag-desc">Uniforms · Technology · Architecture</div><span class="ag-badge ai">Claude Vision</span></div>
-<div class="ag-card"><div class="ag-icon">🤖</div><div class="ag-name">AI Generation Detection</div><div class="ag-desc">DALL-E · Midjourney · Stable Diffusion</div><span class="ag-badge ai">Claude Vision</span></div>
-<div class="ag-card"><div class="ag-icon">🔍</div><div class="ag-name">Copy-Move Detection</div><div class="ag-desc">Clone regions · Block matching · DCT</div><span class="ag-badge local">Local Analysis</span></div>
-<div class="ag-card"><div class="ag-icon">📊</div><div class="ag-name">Frequency Analysis</div><div class="ag-desc">Spectral · JPEG Grid · Noise consistency</div><span class="ag-badge local">Local Analysis</span></div>
-<div class="ag-card"><div class="ag-icon">🎵</div><div class="ag-name">Audio Deepfake</div><div class="ag-desc">TTS detection · Spectral · Voice clone</div><span class="ag-badge local">Local + AI</span></div>
-<div class="ag-card"><div class="ag-icon">🎬</div><div class="ag-name">Video Forensic</div><div class="ag-desc">Temporal · Frame analysis · Scene cuts</div><span class="ag-badge local">Local + AI</span></div>
-<div class="ag-card"><div class="ag-icon">📄</div><div class="ag-name">Document Forensic</div><div class="ag-desc">Metadata · Fonts · Signatures · Structure</div><span class="ag-badge local">Local + AI</span></div>
+<div class="ag-card"><div class="ag-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg></div><div class="ag-name">Forensic-Technical</div><div class="ag-desc">ELA · EXIF · Compression · Grain</div><span class="ag-badge local">Local Analysis</span></div>
+<div class="ag-card"><div class="ag-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div><div class="ag-name">Physical Analysis</div><div class="ag-desc">Shadows · Lighting · Perspective</div><span class="ag-badge ai">Claude Vision</span></div>
+<div class="ag-card"><div class="ag-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></div><div class="ag-name">Historical Context</div><div class="ag-desc">Uniforms · Technology · Architecture</div><span class="ag-badge ai">Claude Vision</span></div>
+<div class="ag-card"><div class="ag-icon"><svg viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 15h4l3-6 4 10 3-4h2"/></svg></div><div class="ag-name">AI Generation Detection</div><div class="ag-desc">DALL-E · Midjourney · Stable Diffusion</div><span class="ag-badge ai">Claude Vision</span></div>
+<div class="ag-card"><div class="ag-icon"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2"/></svg></div><div class="ag-name">Copy-Move Detection</div><div class="ag-desc">Clone regions · Block matching · DCT</div><span class="ag-badge local">Local Analysis</span></div>
+<div class="ag-card"><div class="ag-icon"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg></div><div class="ag-name">Frequency Analysis</div><div class="ag-desc">Spectral · JPEG Grid · Noise consistency</div><span class="ag-badge local">Local Analysis</span></div>
+<div class="ag-card"><div class="ag-icon"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></div><div class="ag-name">Audio Deepfake</div><div class="ag-desc">TTS detection · Spectral · Voice clone</div><span class="ag-badge local">Local + AI</span></div>
+<div class="ag-card"><div class="ag-icon"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="15" height="14" rx="2"/><path d="M17 9l5-3v10l-5-3"/></svg></div><div class="ag-name">Video Forensic</div><div class="ag-desc">Temporal · Frame analysis · Scene cuts</div><span class="ag-badge local">Local + AI</span></div>
+<div class="ag-card"><div class="ag-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div><div class="ag-name">Document Forensic</div><div class="ag-desc">Metadata · Fonts · Signatures · Structure</div><span class="ag-badge local">Local + AI</span></div>
 </div>
 </section>
 
@@ -188,12 +188,12 @@ footer{flex-direction:column;gap:16px;text-align:center}
 <div class="sec-title">What no competitor offers.</div>
 <div class="sec-sub">We didn't just build another detector. We built a forensic investigation platform.</div>
 <div class="diff-grid">
-<div class="d-card"><div class="d-icon">🔴</div><div><div class="d-title">Internal Red Team</div><div class="d-text">Every analysis is challenged by an adversarial agent that hunts for false positives, blind spots, and edge cases before results reach you.</div></div></div>
-<div class="d-card"><div class="d-icon">🏛</div><div><div class="d-title">Historical Context Engine</div><div class="d-text">No competitor analyzes period-specific elements — uniforms, weapons, architecture, vegetation — to detect anachronisms in historical media.</div></div></div>
-<div class="d-card"><div class="d-icon">⚖</div><div><div class="d-title">Evidentiary Output</div><div class="d-text">SHA-256 chain of custody from ingestion. Cryptographic stamps. PDF reports designed for legal proceedings. Every step auditable.</div></div></div>
-<div class="d-card"><div class="d-icon">👥</div><div><div class="d-title">HITL Expert Network</div><div class="d-text">Built-in marketplace for certified human experts — historians, insurance investigators, forensic analysts — for high-stakes cases.</div></div></div>
-<div class="d-card"><div class="d-icon">🔬</div><div><div class="d-title">Multi-Agent Cross-Reference</div><div class="d-text">9 agents analyze different dimensions simultaneously. Weighted consensus engine produces explainable verdicts, not black-box scores.</div></div></div>
-<div class="d-card"><div class="d-icon">📊</div><div><div class="d-title">Transparent Findings</div><div class="d-text">Interactive heatmaps pinpoint exact anomaly locations. Every finding includes type, severity, and technical explanation.</div></div></div>
+<div class="d-card"><div class="d-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div><div class="d-title">Internal Red Team</div><div class="d-text">Every analysis is challenged by an adversarial agent that hunts for false positives, blind spots, and edge cases before results reach you.</div></div></div>
+<div class="d-card"><div class="d-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></div><div><div class="d-title">Historical Context Engine</div><div class="d-text">No competitor analyzes period-specific elements — uniforms, weapons, architecture, vegetation — to detect anachronisms in historical media.</div></div></div>
+<div class="d-card"><div class="d-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></div><div><div class="d-title">Evidentiary Output</div><div class="d-text">SHA-256 chain of custody from ingestion. Cryptographic stamps. PDF reports designed for legal proceedings. Every step auditable.</div></div></div>
+<div class="d-card"><div class="d-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div><div><div class="d-title">HITL Expert Network</div><div class="d-text">Built-in marketplace for certified human experts — historians, insurance investigators, forensic analysts — for high-stakes cases.</div></div></div>
+<div class="d-card"><div class="d-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg></div><div><div class="d-title">Multi-Agent Cross-Reference</div><div class="d-text">9 agents analyze different dimensions simultaneously. Weighted consensus engine produces explainable verdicts, not black-box scores.</div></div></div>
+<div class="d-card"><div class="d-icon"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg></div><div><div class="d-title">Transparent Findings</div><div class="d-text">Interactive heatmaps pinpoint exact anomaly locations. Every finding includes type, severity, and technical explanation.</div></div></div>
 </div>
 </section>
 
