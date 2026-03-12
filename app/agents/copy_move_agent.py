@@ -48,10 +48,10 @@ class CopyMoveAgent:
                     anomalies.append({
                         "type": "Copy-Move",
                         "description": (
-                            f"Cloned region detected: block at ({x1_pct}%,{y1_pct}%) "
-                            f"matches block at ({x2_pct}%,{y2_pct}%) "
-                            f"with {sim:.1%} similarity. "
-                            f"Shift distance: {m['shift']} pixels."
+                            f"זוהה אזור משוכפל: בלוק ב-({x1_pct}%,{y1_pct}%) "
+                            f"תואם לבלוק ב-({x2_pct}%,{y2_pct}%) "
+                            f"ברמת דמיון {sim:.1%}. "
+                            f"מרחק הזזה: {m['shift']} פיקסלים."
                         ),
                         "severity": severity,
                         "location": {"x": x1_pct, "y": y1_pct},

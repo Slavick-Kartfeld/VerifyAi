@@ -17,7 +17,7 @@ def detect_media_type(filename: str) -> str:
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
     image_exts = {"jpg", "jpeg", "png", "bmp", "tiff", "tif", "webp", "gif", "heic", "heif"}
     video_exts = {"mp4", "avi", "mov", "mkv", "webm", "wmv", "flv", "m4v"}
-    audio_exts = {"mp3", "wav", "ogg", "flac", "m4a", "aac", "wma"}
+    audio_exts = {"mp3", "wav", "ogg", "flac", "m4a", "aac", "wma", "opus", "aiff", "aif"}
     doc_exts = {"pdf", "doc", "docx", "txt", "rtf", "odt", "xls", "xlsx"}
 
     if ext in image_exts:

@@ -23,7 +23,7 @@ class ForensicTechnicalAgent:
             img = Image.open(io.BytesIO(file_bytes))
         except Exception:
             return self._result(0.5, findings, [
-                self._anomaly("format", "Cannot open file as image", "medium")
+                self._anomaly("format", "לא ניתן לפתוח את הקובץ כתמונה", "medium")
             ])
 
         # 1. ניתוח מטאדטה EXIF
@@ -72,8 +72,8 @@ class ForensicTechnicalAgent:
 
         if not exif_data:
             anomalies.append(self._anomaly(
-                "Metadata",
-                "File is missing EXIF metadata entirely. Metadata may have been intentionally stripped to conceal image origin.",
+                "מטאדטה",
+                "הקובץ נעדר מטאדטה EXIF לחלוטין. ייתכן שהמטאדטה הוסרה בכוונה כדי להסתיר את מקור התמונה.",
                 "medium",
                 {"x": 90, "y": 10}
             ))
@@ -86,8 +86,8 @@ class ForensicTechnicalAgent:
                 for tool in editing_tools:
                     if tool.lower() in software.lower():
                         anomalies.append(self._anomaly(
-                            "Editing Software",
-                            f"Editing software detected in metadata: {software}. Image has been processed.",
+                            "תוכנת עריכה",
+                            f"זוהתה תוכנת עריכה במטאדטה: {software}. התמונה עברה עיבוד.",
                             "medium",
                             {"x": 85, "y": 8}
                         ))
@@ -100,8 +100,8 @@ class ForensicTechnicalAgent:
                 findings["date_original"] = date_original
                 findings["date_modified"] = date_modified
                 anomalies.append(self._anomaly(
-                    "Timestamps",
-                    f"Discrepancy between capture date ({date_original}) and modification date ({date_modified}).",
+                    "תאריכים",
+                    f"פער בין תאריך הצילום ({date_original}) לתאריך העריכה ({date_modified}).",
                     "high",
                     {"x": 80, "y": 15}
                 ))
@@ -159,9 +159,9 @@ class ForensicTechnicalAgent:
                     ratio = round(r["mean"] / overall_mean, 1)
                     anomalies.append(self._anomaly(
                         "ELA",
-                        f"ELA anomaly detected in region ({r['row']+1},{r['col']+1}). "
-                        f"Error level is {ratio}x above average, "
-                        f"indicating editing or compositing in this area.",
+                        f"חריגה ברמת שגיאת ELA באזור ({r['row']+1},{r['col']+1}). "
+                        f"עוצמת השגיאה גבוהה פי {ratio} מהממוצע, "
+                        f"המעידה על עריכה או הדבקה באזור זה.",
                         "high",
                         {"x": x_pct, "y": y_pct}
                     ))
@@ -169,9 +169,9 @@ class ForensicTechnicalAgent:
             # אם השונות הכללית גבוהה מאוד
             if std_error > 20:
                 anomalies.append(self._anomaly(
-                    "ELA General",
-                    f"High ELA variance ({round(std_error, 1)}). "
-                    f"Indicates different compression levels across image regions.",
+                    "ELA כללי",
+                    f"שונות גבוהה ברמת ה-ELA ({round(std_error, 1)}). "
+                    f"מעידה על רמות דחיסה שונות בחלקים שונים של התמונה.",
                     "medium",
                     {"x": 50, "y": 50}
                 ))
@@ -204,9 +204,9 @@ class ForensicTechnicalAgent:
 
                         if q_std > 25:
                             anomalies.append(self._anomaly(
-                                "Double Compression",
-                                "Signs of JPEG double compression detected. "
-                                "This may indicate the image was re-saved after editing.",
+                                "דחיסה כפולה",
+                                "נמצאו סימנים לדחיסת JPEG כפולה (double compression). "
+                                "זה עלול להעיד על שמירה מחדש לאחר עריכה.",
                                 "medium",
                                 {"x": 50, "y": 85}
                             ))
@@ -219,9 +219,9 @@ class ForensicTechnicalAgent:
 
             if bytes_per_pixel < 0.1 and img.format == "JPEG":
                 anomalies.append(self._anomaly(
-                    "Compression",
-                    f"Abnormal compression ratio ({round(bytes_per_pixel, 3)} bytes/pixel). "
-                    f"Image is heavily compressed relative to its dimensions — may have been saved multiple times.",
+                    "דחיסה",
+                    f"יחס דחיסה חריג ({round(bytes_per_pixel, 3)} bytes/pixel). "
+                    f"התמונה דחוסה מאוד ביחס למימדיה, ייתכן שנשמרה מספר פעמים.",
                     "low",
                     {"x": 15, "y": 90}
                 ))
@@ -243,9 +243,9 @@ class ForensicTechnicalAgent:
         ]
         if (img.width, img.height) in ai_dimensions:
             anomalies.append(self._anomaly(
-                "Dimensions",
-                f"Image dimensions ({img.width}x{img.height}) match typical AI model output "
-                f"(e.g. DALL-E, Midjourney, Stable Diffusion).",
+                "מימדים",
+                f"מימדי התמונה ({img.width}x{img.height}) תואמים לפלט אופייני של מודלי AI "
+                f"(כגון DALL-E, Midjourney, Stable Diffusion).",
                 "medium",
                 {"x": 10, "y": 10}
             ))
