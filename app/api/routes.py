@@ -1,7 +1,9 @@
 import asyncio
 import uuid
 import re
-from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.database import get_db
@@ -9,7 +11,8 @@ from app.models.models import Case, AgentResult
 from app.api.schemas import VerifyResponse, CaseResponse, AgentResultResponse, AnomalyDetail, HITLApprovalRequest
 from app.services.storage import compute_sha256, detect_media_type, save_file_locally, validate_magic_bytes
 
-router = APIRouter(prefix="/v1", tags=["verify"])
+router  = APIRouter(prefix="/v1", tags=["verify"])
+limiter = Limiter(key_func=get_remote_address)
 
 # ── Security constants ────────────────────────────────────────────────────────
 MAX_FILE_SIZE   = 50 * 1024 * 1024   # 50 MB
@@ -55,7 +58,9 @@ def _resize_image_if_needed(file_bytes: bytes, filename: str) -> bytes:
 
 
 @router.post("/verify", response_model=VerifyResponse)
+@limiter.limit("10/minute;50/hour;200/day")   # per IP — adjust in Sprint 3 with JWT tiers
 async def submit_verification(
+    request: Request,
     file: UploadFile = File(...),
     client_id: str = Form(...),
     context: str = Form(default=None),
