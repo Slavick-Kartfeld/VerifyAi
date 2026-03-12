@@ -7,7 +7,7 @@ from sqlalchemy import select
 from app.core.database import get_db
 from app.models.models import Case, AgentResult
 from app.api.schemas import VerifyResponse, CaseResponse, AgentResultResponse, AnomalyDetail, HITLApprovalRequest
-from app.services.storage import compute_sha256, detect_media_type, save_file_locally
+from app.services.storage import compute_sha256, detect_media_type, save_file_locally, validate_magic_bytes
 
 router = APIRouter(prefix="/v1", tags=["verify"])
 
@@ -76,10 +76,10 @@ async def submit_verification(
             detail=f"קובץ גדול מדי. מקסימום {MAX_FILE_SIZE // (1024*1024)}MB"
         )
 
-    # ── 3. Media type detection ────────────────────────────────────────────
-    media_type = detect_media_type(file.filename)
-    if media_type == "unknown":
-        raise HTTPException(status_code=400, detail="סוג קובץ לא נתמך")
+    # ── 3. Magic bytes validation (anti-spoofing) ─────────────────────────
+    magic_type, fmt = validate_magic_bytes(file_bytes, file.filename or "upload")
+    media_type = magic_type  # use magic-confirmed type, not just extension
+
 
     # ── 4. Resize images to prevent OOM ───────────────────────────────────
     if media_type == "image":
@@ -87,6 +87,16 @@ async def submit_verification(
 
     # ── 5. Chain of custody hash ───────────────────────────────────────────
     file_hash = compute_sha256(file_bytes)
+
+    # ── 5b. SHA-256 deduplication — return existing case immediately ───────
+    existing = await db.execute(select(Case).where(Case.file_hash == file_hash).where(Case.status == "completed"))
+    existing_case = existing.scalar_one_or_none()
+    if existing_case:
+        return VerifyResponse(
+            case_id=existing_case.id,
+            status="completed",
+            message=f"Duplicate file — returning existing analysis ({existing_case.verdict})",
+        )
 
     # ── 6. Save file ───────────────────────────────────────────────────────
     file_url = await save_file_locally(file_bytes, file.filename)

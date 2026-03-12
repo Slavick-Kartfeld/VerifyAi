@@ -560,7 +560,14 @@ function full(v,c,agents,hitl){const ic={authentic:'✓',forged:'✕',inconclusi
   const confHtml = isClean
     ? `<div class="v-score-val clean">✓ CLEAN</div><div class="v-score-lbl">${t('confidence_score')}</div><div class="v-score-sub">No anomalies in all checks</div>`
     : `<div class="v-score-val" style="color:${c>=.75?'var(--green)':c>=.5?'var(--amber)':'var(--red)'}">${confPct}%</div><div class="v-score-lbl">${t('confidence_score')}</div><div class="v-score-sub">${t('score_sub_conf')||'Weighted anomaly score'}</div>`;
-  const covPct = Math.round(Math.min(100, ran * (ran===1?100:100/7)));
+  // Max agents per media type (matches orchestrator._select_agents)
+  const maxAgents = ran<=1?1:ran<=2?2:ran<=3?3:ran<=5?5:7;
+  // Infer from agent types which media we have
+  const hasAudio = agents.some(a=>a.agent_type==='audio_deepfake');
+  const hasVideo = agents.some(a=>a.agent_type==='video_forensic');
+  const hasDoc   = agents.some(a=>a.agent_type==='document_forensic');
+  const expectedMax = hasAudio?1:hasVideo?4:hasDoc?3:7;
+  const covPct = Math.round(Math.min(100, (ran/expectedMax)*100));
   const covHtml = `<div class="v-score-val" style="color:${covPct>=80?'var(--green)':covPct>=50?'var(--amber)':'var(--red)'}">${covPct}%</div><div class="v-score-lbl">${t('coverage_score')||'Coverage'}</div><div class="v-score-sub">${ran} ${t('d_agents_lbl')||'agents'} ran</div>`;
   document.getElementById('vScores').innerHTML=`<div class="v-score-item">${confHtml}</div><div class="v-score-divider"></div><div class="v-score-item">${covHtml}</div>`;
 })();document.getElementById('vp').classList.add('on');
