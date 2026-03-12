@@ -13,6 +13,7 @@ from app.agents.audio_agent import AudioDeepfakeAgent
 from app.agents.video_agent import VideoForensicAgent
 from app.agents.document_agent import DocumentForensicAgent
 from app.agents.metadata_agent import MetadataConsistencyAgent
+from app.agents.c2pa_agent import C2PAProvenanceAgent
 
 AGENT_TIMEOUT    = 45   # seconds per agent
 RED_TEAM_TIMEOUT = 60   # seconds for red team (calls Claude multiple times)
@@ -59,6 +60,7 @@ class Orchestrator:
         self.video      = VideoForensicAgent()
         self.document   = DocumentForensicAgent()
         self.metadata   = MetadataConsistencyAgent()
+        self.c2pa       = C2PAProvenanceAgent()
         self.cross_ref  = CrossReferenceEngine()
         self.red_team   = RedTeamAgent()
 
@@ -123,13 +125,13 @@ class Orchestrator:
     def _select_agents(self, media_type: str) -> list:
         if media_type == "image":
             return [self.forensic, self.physical, self.contextual, self.ai_gen,
-                    self.copy_move, self.frequency, self.metadata]
+                    self.copy_move, self.frequency, self.metadata, self.c2pa]
         elif media_type == "video":
-            return [self.physical, self.contextual, self.video, self.frequency]
+            return [self.physical, self.contextual, self.video, self.frequency, self.c2pa]
         elif media_type == "audio":
-            return [self.audio]                              # audio only — forensic is image-only
+            return [self.audio, self.c2pa]
         elif media_type == "document":
-            return [self.contextual, self.document, self.metadata]
+            return [self.contextual, self.document, self.metadata, self.c2pa]
         return [self.forensic]
 
     def _final_verdict(self, cross_ref: dict, red_team: dict) -> dict:
