@@ -481,7 +481,7 @@ function toggleLang(){curLang=curLang==='en'?'he':'en';applyLang()}
 applyLang();
 
 // ─── APP LOGIC ───
-const A='';let sel=null,furl=null,phoneVerified=false,currentType='person',caseData=null;
+const A='';let sel=null,furl=null,phoneVerified=false,currentType='person',caseData=null,hmAgents=[];
 const ti={image:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',video:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="4" width="15" height="14" rx="2"/><path d="M17 9l5-3v10l-5-3"/></svg>',audio:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/></svg>',document:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'};
 function mt(f){if(f.type.startsWith('image/'))return'image';if(f.type.startsWith('video/'))return'video';if(f.type.startsWith('audio/'))return'audio';return'document'}
 function sz(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB'}
@@ -543,7 +543,48 @@ function render(d){document.getElementById('prog').style.display='none';document
 function mock(){document.getElementById('prog').style.display='none';document.getElementById('rt').textContent=t('d_complete');document.getElementById('rs').textContent=t('d_type')+': image';document.getElementById('hp').classList.add('on');document.getElementById('hv').textContent='a3f2c8e1b9d7...7b9e';const ag=[{agent_type:'forensic_technical',confidence_score:.71,anomalies:[{type:'ELA',description:'JPEG compression anomaly in center-left area. Error Level 3.4x higher than expected — late editing detected.',severity:'high',location:{x:35,y:45}},{type:'Metadata',description:'EXIF timestamp: 1943. Editing software: Adobe Photoshop CC 2019.',severity:'high',location:{x:72,y:20}}]},{agent_type:'physical',confidence_score:.55,anomalies:[{type:'Shadows',description:'Central object shadow direction (215°) contradicts background (168°). 47° gap indicates possible compositing.',severity:'high',location:{x:50,y:60}},{type:'Perspective',description:'Vanishing points mismatch between foreground and background. ~12° deviation.',severity:'medium',location:{x:25,y:75}}]},{agent_type:'contextual',confidence_score:.60,anomalies:[{type:'Period',description:'Bakelite buttons replaced by plastic only in 1951. Inconsistent with 1942-44 dating.',severity:'medium',location:{x:60,y:40}}]},{agent_type:'ai_generation',confidence_score:.70,anomalies:[{type:'AI Check',description:'No definitive AI generation signatures detected. Deeper analysis recommended.',severity:'low',location:{x:50,y:50}}]},{agent_type:'copy_move',confidence_score:.82,anomalies:[{type:'Copy-Move',description:'Cloned region detected: block at (32%,45%) matches block at (68%,47%) with 95.2% similarity. Shift: 184px.',severity:'high',location:{x:32,y:45}}]}];full('inconclusive',.62,ag,true);showRedTeam({threat_level:'medium',summary:'Red Team identified 3 challenges and 2 blind spots. Threat level: medium. 2 improvements recommended.',challenges:[{type:'false_positive_risk',challenge:'ELA anomaly may result from legitimate double compression (social media/WhatsApp sharing).',severity:'medium'},{type:'consistency_gap',challenge:'Significant gap (16%) between forensic_technical (71%) and physical (55%). One may be incorrect.',severity:'high'},{type:'cross_disagreement',challenge:'Forensic and contextual agents disagree. Possible sophisticated forgery passing one layer only.',severity:'medium'}],blind_spots:[{agent:'system',issue:'No copy-move/clone detection performed in previous versions. Common forgery technique.',risk:'missing_capability'},{agent:'physical',issue:'Physical agent reported 55% confidence — low reliability. Deeper analysis needed.',risk:'low_confidence'}],recommendations:['High-severity challenges found — HITL expert verification recommended.','Multiple blind spots detected. Consider expanding agent set (frequency analysis).']})}
 function full(v,c,agents,hitl){const ic={authentic:'✓',forged:'✕',inconclusive:'?'};const lb={authentic:'VERIFIED — AUTHENTIC',forged:'ALERT — FORGERY DETECTED',inconclusive:'INCONCLUSIVE — REVIEW REQUIRED'};document.getElementById('ri').innerHTML=ic[v];document.getElementById('ri').className='rh-ico '+v;document.getElementById('vb').className='vbox '+v;document.getElementById('vBadge').textContent=lb[v];document.getElementById('vt').textContent=t('d_verdict_'+{authentic:'auth',forged:'forged',inconclusive:'inc'}[v]);document.getElementById('vc').textContent=(c*100).toFixed(1)+'%';document.getElementById('vp').classList.add('on');
 document.getElementById('stampPanel').classList.add('on');const now=new Date().toISOString();const req=caseData?.requester;const rName=req?(req.name||req.company||''):'demo';const rId=req?(req.id_number||req.reg_number||''):'N/A';document.getElementById('stampData').innerHTML=`<strong>${t('stamp_data')}</strong>CASE: ${document.getElementById('ct').textContent}\nDATE: ${now}\nVERDICT: ${v.toUpperCase()}\nCONFIDENCE: ${(c*100).toFixed(1)}%\nREQUESTER: ${rName} [${rId}]\nFILE_HASH: ${document.getElementById('hv').textContent}\nAGENTS: ${agents.length}\nANOMALIES: ${agents.reduce((s,a)=>s+(a.anomalies?a.anomalies.length:0),0)}`;
-if(sel&&mt(sel)==='image'&&furl){document.getElementById('hImg').src=furl;document.getElementById('hm').classList.add('on');document.getElementById('hImg').onload=()=>{const ov=document.getElementById('hOv');ov.innerHTML='';let n=1;const all=[];agents.forEach(a=>{(a.anomalies||[]).forEach(an=>{if(an.location)all.push({...an,agent:a.agent_type})})});all.forEach(an=>{const m=document.createElement('div');m.className='am';m.style.left=an.location.x+'%';m.style.top=an.location.y+'%';m.style.transform='translate(-50%,-50%)';const la={forensic_technical:t('ha_forensic'),physical:t('ha_physical'),contextual:t('ha_contextual'),ai_generation:t('ha_ai'),copy_move:t('ha_copymove'),frequency_analysis:t('ha_frequency'),audio_deepfake:t('ha_audio'),video_forensic:t('ha_video'),document_forensic:t('ha_document'),metadata_consistency:t('ha_metadata')};m.innerHTML=`<div class="mr ${an.severity}"><span class="mn">${n}</span></div><div class="mt"><div class="ta ${an.agent||''}">${la[an.agent]||an.agent}</div><div class="tt">${an.description}</div><span class="ts ${an.severity}">${an.severity==='high'?t('sv_high'):an.severity==='medium'?t('sv_med'):t('sv_low')}</span></div>`;m.onclick=e=>{e.stopPropagation();document.querySelectorAll('.am').forEach(x=>x.classList.remove('active'));m.classList.toggle('active')};ov.appendChild(m);n++})}}
+if(sel&&mt(sel)==='image'&&furl){hmAgents=agents;document.getElementById('hImg').src=furl;document.getElementById('hm').classList.add('on');document.getElementById('hImg').onload=()=>{const img=document.getElementById('hImg');const ov=document.getElementById('hOv');ov.innerHTML='';
+
+/* ── Compute the actual rendered image rect within the container ── */
+function getImgBounds(){
+  const cr=img.parentElement.getBoundingClientRect();
+  const ir=img.getBoundingClientRect();
+  return{
+    left:(ir.left-cr.left)/cr.width*100,
+    top:(ir.top-cr.top)/cr.height*100,
+    right:(ir.right-cr.left)/cr.width*100,
+    bottom:(ir.bottom-cr.top)/cr.height*100,
+    w:(ir.width/cr.width)*100,
+    h:(ir.height/cr.height)*100
+  };
+}
+
+let n=1;const all=[];
+agents.forEach(a=>{(a.anomalies||[]).forEach(an=>{if(an.location)all.push({...an,agent:a.agent_type})})});
+
+/* Clamp helper: keep marker center inside the image with a 4% margin */
+function clamp(val,mn,mx){return Math.max(mn,Math.min(mx,val));}
+
+all.forEach(an=>{
+  const b=getImgBounds();
+  /* raw % from backend → translate into container-% space */
+  const margin=4;
+  const cx=b.left + clamp(an.location.x, margin, 100-margin)/100 * b.w;
+  const cy=b.top  + clamp(an.location.y, margin, 100-margin)/100 * b.h;
+
+  const m=document.createElement('div');
+  m.className='am';
+  m.style.left=cx+'%';
+  m.style.top=cy+'%';
+  m.style.transform='translate(-50%,-50%)';
+  const la={forensic_technical:t('ha_forensic'),physical:t('ha_physical'),contextual:t('ha_contextual'),ai_generation:t('ha_ai'),copy_move:t('ha_copymove'),frequency_analysis:t('ha_frequency'),audio_deepfake:t('ha_audio'),video_forensic:t('ha_video'),document_forensic:t('ha_document'),metadata_consistency:t('ha_metadata')};
+  m.innerHTML=`<div class="mr ${an.severity}"><span class="mn">${n}</span></div><div class="mt"><div class="ta ${an.agent||''}">${la[an.agent]||an.agent}</div><div class="tt">${an.description}</div><span class="ts ${an.severity}">${an.severity==='high'?t('sv_high'):an.severity==='medium'?t('sv_med'):t('sv_low')}</span></div>`;
+  m.onclick=e=>{e.stopPropagation();document.querySelectorAll('.am').forEach(x=>x.classList.remove('active'));m.classList.toggle('active')};
+  ov.appendChild(m);n++
+});
+/* Re-render markers when container resizes (responsive layout) */
+if(!img._hmRo){img._hmRo=new ResizeObserver(()=>{if(img.complete&&img.naturalWidth>0)img.dispatchEvent(new Event('load'))});img._hmRo.observe(img.parentElement)}
+}}
 const icons={
 forensic_technical:'<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg>',
 physical:'<svg viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
