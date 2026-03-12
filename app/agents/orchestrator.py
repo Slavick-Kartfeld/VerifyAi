@@ -125,11 +125,11 @@ class Orchestrator:
             return [self.forensic, self.physical, self.contextual, self.ai_gen,
                     self.copy_move, self.frequency, self.metadata]
         elif media_type == "video":
-            return [self.forensic, self.physical, self.contextual, self.video, self.frequency]
+            return [self.physical, self.contextual, self.video, self.frequency]
         elif media_type == "audio":
-            return [self.forensic, self.audio]
+            return [self.audio]                              # audio only — forensic is image-only
         elif media_type == "document":
-            return [self.forensic, self.contextual, self.document, self.metadata]
+            return [self.contextual, self.document, self.metadata]
         return [self.forensic]
 
     def _final_verdict(self, cross_ref: dict, red_team: dict) -> dict:

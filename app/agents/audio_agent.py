@@ -229,7 +229,14 @@ RESPOND ONLY WITH JSON:
                 })
 
             high_count = sum(1 for a in anomalies if a["severity"] == "high")
-            confidence = max(0.2, 0.85 - high_count * 0.15 - len(anomalies) * 0.06)
+            med_count  = sum(1 for a in anomalies if a["severity"] == "medium")
+
+            if len(anomalies) == 0:
+                # Clean audio — confident it's natural
+                confidence = 0.85
+            else:
+                # More/higher anomalies = lower confidence (more likely synthetic)
+                confidence = max(0.15, 0.82 - high_count * 0.20 - med_count * 0.08 - (len(anomalies) - high_count - med_count) * 0.04)
             return {"anomalies": anomalies, "findings": findings, "confidence": confidence}
 
         except Exception as e:
