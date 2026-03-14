@@ -13,6 +13,7 @@ class CrossReferenceEngine:
     WEIGHTS = {
         "forensic_technical":  0.18,
         "c2pa_provenance":     0.15,
+        "rppg_physiological":  0.08,   # physiological signal — video only
         "physical":            0.12,
         "contextual":          0.10,
         "ai_generation":       0.10,
