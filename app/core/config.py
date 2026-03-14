@@ -20,10 +20,9 @@ class Settings(BaseSettings):
     AWS_REGION: str = "eu-west-1"
     S3_BUCKET_NAME: str = "verifyai-media"
 
-    # AI — Multi-Provider Vision Ensemble
+    # AI
     OPENAI_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
-    GEMINI_API_KEY: str = ""
 
     # HITL
     HITL_CONFIDENCE_THRESHOLD: float = 0.75

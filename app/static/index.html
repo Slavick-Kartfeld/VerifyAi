@@ -137,7 +137,13 @@ html[dir="rtl"] .fg select{background-position:right 12px center;padding-left:14
 .vbox.authentic .v-badge{background:rgba(0,200,83,.1);color:var(--green);border:1px solid rgba(0,200,83,.15)}.vbox.forged .v-badge{background:rgba(255,23,68,.08);color:var(--red);border:1px solid rgba(255,23,68,.12)}.vbox.inconclusive .v-badge{background:rgba(255,171,0,.08);color:var(--amber);border:1px solid rgba(255,171,0,.12)}
 .v-title{font-size:22px;font-weight:800;margin-bottom:6px}
 .vbox.authentic .v-title{color:var(--green)}.vbox.forged .v-title{color:var(--red)}.vbox.inconclusive .v-title{color:var(--amber)}
-.v-conf{font-size:13px;color:var(--text-2)}.v-conf b{font-family:var(--mono);font-weight:600}
+.v-scores{display:flex;gap:20px;margin-top:8px;flex-wrap:wrap;justify-content:center}
+.v-score-item{display:flex;flex-direction:column;align-items:center;gap:2px}
+.v-score-val{font-family:var(--mono);font-size:18px;font-weight:700;letter-spacing:.02em}
+.v-score-val.clean{color:var(--green);font-size:22px}
+.v-score-lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
+.v-score-sub{font-size:10px;color:var(--text-3);margin-top:2px}
+.v-score-divider{width:1px;background:rgba(255,255,255,.12);align-self:stretch;margin:0 4px}
 .stamp-panel{padding:0 28px 28px;display:none}.stamp-panel.on{display:block}
 .stamp-card{background:var(--deep);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative;overflow:hidden;animation:glow 3s ease-in-out infinite}
 .stamp-card::before{content:'';position:absolute;top:0;right:0;bottom:0;width:3px;background:var(--green)}
@@ -165,7 +171,7 @@ html[dir="ltr"] .stamp-card::before{right:auto;left:0}
 .am:hover .mt,.am.active .mt{display:block;opacity:1;transform:translateX(-50%) translateY(0)}
 .mt::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--border-bright)}
 .ta{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px}
-.ta.forensic_technical{color:#a78bfa}.ta.physical{color:var(--cyan)}.ta.contextual{color:var(--amber)}.ta.ai_generation{color:#f472b6}.ta.copy_move{color:#63b3ed}.ta.frequency_analysis{color:#818cf8}.ta.audio_deepfake{color:#fb923c}.ta.video_forensic{color:#ea580c}.ta.document_forensic{color:#a8a29e}.ta.metadata_consistency{color:#38bdf8}
+.ta.forensic_technical{color:#a78bfa}.ta.physical{color:var(--cyan)}.ta.contextual{color:var(--amber)}.ta.ai_generation{color:#f472b6}.ta.copy_move{color:#63b3ed}.ta.frequency_analysis{color:#818cf8}.ta.audio_deepfake{color:#fb923c}.ta.video_forensic{color:#ea580c}.ta.document_forensic{color:#a8a29e}.ta.metadata_consistency{color:#38bdf8}.ta.c2pa_provenance{color:#a78bfa}
 .tt{font-size:12px;color:var(--text-2);line-height:1.6}
 .ts{display:inline-block;margin-top:6px;padding:2px 8px;border-radius:3px;font-family:var(--mono);font-size:9px;font-weight:600}
 .ts.high{background:rgba(255,23,68,.1);color:var(--red)}.ts.medium{background:rgba(255,171,0,.1);color:var(--amber)}.ts.low{background:var(--blue-dim);color:var(--blue)}
@@ -365,7 +371,7 @@ html[dir="ltr"] .disc::before{right:auto;left:0}
 </div>
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 12px;margin-bottom:8px" id="agentGrid"></div>
 </div>
-<div class="verdict-p" id="vp"><div class="vbox" id="vb"><div class="v-badge" id="vBadge"></div><div class="v-title" id="vt"></div><div class="v-conf"><span data-i="confidence_score">Confidence Score</span>: <b id="vc"></b></div></div></div>
+<div class="verdict-p" id="vp"><div class="vbox" id="vb"><div class="v-badge" id="vBadge"></div><div class="v-title" id="vt"></div><div class="v-scores" id="vScores"></div></div></div>
 
 <div class="stamp-panel" id="stampPanel">
 <div class="stamp-card">
@@ -410,7 +416,7 @@ dz_title:'Drag a file here or click to browse',dz_sub:'Our forensic AI agents wi
 lbl_context:'Context (optional)',btn_back:'Back',btn_submit:'Submit for Forensic Analysis',
 sec_results:'FORENSIC ANALYSIS RESULTS',analyzing:'Analyzing...',file_received:'File received by system',
 st_ingest:'Ingest',st_forensic:'Forensic',st_physical:'Physical',st_context:'Context',st_clone:'Clone',st_cross:'Cross-Ref',
-confidence_score:'Confidence Score',stamp_title:'Cryptographic Stamp',
+ag_c2pa:'C2PA Provenance Agent',ag_c2pa_d:'Content Credentials · Signature · Chain',confidence_score:'Confidence Score',coverage_score:'Analysis Coverage',score_sub_conf:'Weighted anomaly score',stamp_title:'Cryptographic Stamp',
 stamp_info:'A verified digital stamp containing analysis results, requester identity, SHA-256 file signature, and timestamp. Embeddable as proof of verification.',
 stamp_data:'STAMP DATA',btn_stamp:'Issue Cryptographic Stamp',btn_pdf:'Download Evidentiary PDF Report',
 hm_title:'ANOMALY HEATMAP — VISUAL ANALYSIS',sev_high:'High',sev_med:'Medium',sev_low:'Low',
@@ -447,7 +453,7 @@ dz_title:'גרור קובץ לכאן או לחץ לבחירה',dz_sub:'צוות 
 lbl_context:'הקשר (אופציונלי)',btn_back:'חזור',btn_submit:'שלח לניתוח פורנזי',
 sec_results:'תוצאות ניתוח פורנזי',analyzing:'מנתח...',file_received:'הקובץ נקלט למערכת',
 st_ingest:'קליטה',st_forensic:'פורנזי',st_physical:'פיזיקלי',st_context:'הקשרי',st_clone:'שכפול',st_cross:'הצלבה',
-confidence_score:'ציון ביטחון',stamp_title:'חותמת קריפטוגרפית',
+ag_c2pa:'סוכן מקוריות C2PA',ag_c2pa_d:'אישורי תוכן · חתימה · שרשרת',confidence_score:'ציון ביטחון',coverage_score:'כיסוי ניתוח',score_sub_conf:'ציון אנומליות משוקלל',stamp_title:'חותמת קריפטוגרפית',
 stamp_info:'חותמת דיגיטלית מאומתת המכילה את תוצאות הניתוח, זהות מבקש הבדיקה, חתימת SHA-256 של הקובץ המקורי, וחותמת זמן.',
 stamp_data:'נתוני חותמת',btn_stamp:'הנפק חותמת קריפטוגרפית',btn_pdf:'הורד דוח PDF ראייתי',
 hm_title:'מפת אנומליות — ניתוח חזותי',sev_high:'גבוהה',sev_med:'בינונית',sev_low:'נמוכה',
@@ -481,7 +487,7 @@ function toggleLang(){curLang=curLang==='en'?'he':'en';applyLang()}
 applyLang();
 
 // ─── APP LOGIC ───
-const A='';let sel=null,furl=null,phoneVerified=false,currentType='person',caseData=null;
+const A='';let sel=null,furl=null,phoneVerified=false,currentType='person',caseData=null,hmAgents=[];
 const ti={image:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',video:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="4" width="15" height="14" rx="2"/><path d="M17 9l5-3v10l-5-3"/></svg>',audio:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/></svg>',document:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'};
 function mt(f){if(f.type.startsWith('image/'))return'image';if(f.type.startsWith('video/'))return'video';if(f.type.startsWith('audio/'))return'audio';return'document'}
 function sz(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB'}
@@ -513,7 +519,7 @@ redteam:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width
 audio:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/></svg>',
 video:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="2" y="4" width="15" height="14" rx="2"/><path d="M17 9l5-3v10l-5-3"/></svg>',
 document:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
-metadata:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>'};
+metadata:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',c2pa_provenance:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>'};
 const agentSets={
 image:[{ico:svgMini.ingest,key:'st_ingest',fb:'Ingest'},{ico:svgMini.forensic,key:'st_forensic',fb:'Forensic'},{ico:svgMini.physical,key:'st_physical',fb:'Physical'},{ico:svgMini.context,key:'st_context',fb:'Context'},{ico:svgMini.ai,key:'',fb:'AI'},{ico:svgMini.clone,key:'st_clone',fb:'Clone'},{ico:svgMini.freq,key:'',fb:'Frequency'},{ico:svgMini.metadata,key:'',fb:'Metadata'},{ico:svgMini.cross,key:'st_cross',fb:'Cross-Ref'},{ico:svgMini.redteam,key:'',fb:'Red Team'}],
 video:[{ico:svgMini.ingest,key:'st_ingest',fb:'Ingest'},{ico:svgMini.forensic,key:'st_forensic',fb:'Forensic'},{ico:svgMini.physical,key:'st_physical',fb:'Physical'},{ico:svgMini.context,key:'st_context',fb:'Context'},{ico:svgMini.video,key:'',fb:'Video'},{ico:svgMini.freq,key:'',fb:'Frequency'},{ico:svgMini.cross,key:'st_cross',fb:'Cross-Ref'},{ico:svgMini.redteam,key:'',fb:'Red Team'}],
@@ -541,9 +547,73 @@ document.getElementById('wiz4').classList.remove('active');document.getElementBy
 try{const r=await fetch(A+'/v1/verify/'+cid);const d=await r.json();caseData={...caseData,...d};render(d)}catch{mock()}}
 function render(d){document.getElementById('prog').style.display='none';document.getElementById('rt').textContent=t('d_complete');document.getElementById('rs').textContent=t('d_type')+': '+(d.media_type||'image');document.getElementById('hp').classList.add('on');document.getElementById('hv').textContent=d.file_hash||'';if(d.verdict&&d.agent_results&&d.agent_results.length>0){const ag=d.agent_results.map(a=>({agent_type:a.agent_type,confidence_score:a.confidence_score,anomalies:(a.anomalies&&a.anomalies.items)?a.anomalies.items:a.anomalies||[]}));full(d.verdict,d.confidence_score,ag,d.hitl_required);if(d.red_team)showRedTeam(d.red_team)}else if(d.verdict){full(d.verdict,d.confidence_score,[],d.hitl_required)}else{mock()}}
 function mock(){document.getElementById('prog').style.display='none';document.getElementById('rt').textContent=t('d_complete');document.getElementById('rs').textContent=t('d_type')+': image';document.getElementById('hp').classList.add('on');document.getElementById('hv').textContent='a3f2c8e1b9d7...7b9e';const ag=[{agent_type:'forensic_technical',confidence_score:.71,anomalies:[{type:'ELA',description:'JPEG compression anomaly in center-left area. Error Level 3.4x higher than expected — late editing detected.',severity:'high',location:{x:35,y:45}},{type:'Metadata',description:'EXIF timestamp: 1943. Editing software: Adobe Photoshop CC 2019.',severity:'high',location:{x:72,y:20}}]},{agent_type:'physical',confidence_score:.55,anomalies:[{type:'Shadows',description:'Central object shadow direction (215°) contradicts background (168°). 47° gap indicates possible compositing.',severity:'high',location:{x:50,y:60}},{type:'Perspective',description:'Vanishing points mismatch between foreground and background. ~12° deviation.',severity:'medium',location:{x:25,y:75}}]},{agent_type:'contextual',confidence_score:.60,anomalies:[{type:'Period',description:'Bakelite buttons replaced by plastic only in 1951. Inconsistent with 1942-44 dating.',severity:'medium',location:{x:60,y:40}}]},{agent_type:'ai_generation',confidence_score:.70,anomalies:[{type:'AI Check',description:'No definitive AI generation signatures detected. Deeper analysis recommended.',severity:'low',location:{x:50,y:50}}]},{agent_type:'copy_move',confidence_score:.82,anomalies:[{type:'Copy-Move',description:'Cloned region detected: block at (32%,45%) matches block at (68%,47%) with 95.2% similarity. Shift: 184px.',severity:'high',location:{x:32,y:45}}]}];full('inconclusive',.62,ag,true);showRedTeam({threat_level:'medium',summary:'Red Team identified 3 challenges and 2 blind spots. Threat level: medium. 2 improvements recommended.',challenges:[{type:'false_positive_risk',challenge:'ELA anomaly may result from legitimate double compression (social media/WhatsApp sharing).',severity:'medium'},{type:'consistency_gap',challenge:'Significant gap (16%) between forensic_technical (71%) and physical (55%). One may be incorrect.',severity:'high'},{type:'cross_disagreement',challenge:'Forensic and contextual agents disagree. Possible sophisticated forgery passing one layer only.',severity:'medium'}],blind_spots:[{agent:'system',issue:'No copy-move/clone detection performed in previous versions. Common forgery technique.',risk:'missing_capability'},{agent:'physical',issue:'Physical agent reported 55% confidence — low reliability. Deeper analysis needed.',risk:'low_confidence'}],recommendations:['High-severity challenges found — HITL expert verification recommended.','Multiple blind spots detected. Consider expanding agent set (frequency analysis).']})}
-function full(v,c,agents,hitl){const ic={authentic:'✓',forged:'✕',inconclusive:'?'};const lb={authentic:'VERIFIED — AUTHENTIC',forged:'ALERT — FORGERY DETECTED',inconclusive:'INCONCLUSIVE — REVIEW REQUIRED'};document.getElementById('ri').innerHTML=ic[v];document.getElementById('ri').className='rh-ico '+v;document.getElementById('vb').className='vbox '+v;document.getElementById('vBadge').textContent=lb[v];document.getElementById('vt').textContent=t('d_verdict_'+{authentic:'auth',forged:'forged',inconclusive:'inc'}[v]);document.getElementById('vc').textContent=(c*100).toFixed(1)+'%';document.getElementById('vp').classList.add('on');
-document.getElementById('stampPanel').classList.add('on');const now=new Date().toISOString();const req=caseData?.requester;const rName=req?(req.name||req.company||''):'demo';const rId=req?(req.id_number||req.reg_number||''):'N/A';document.getElementById('stampData').innerHTML=`<strong>${t('stamp_data')}</strong>CASE: ${document.getElementById('ct').textContent}\nDATE: ${now}\nVERDICT: ${v.toUpperCase()}\nCONFIDENCE: ${(c*100).toFixed(1)}%\nREQUESTER: ${rName} [${rId}]\nFILE_HASH: ${document.getElementById('hv').textContent}\nAGENTS: ${agents.length}\nANOMALIES: ${agents.reduce((s,a)=>s+(a.anomalies?a.anomalies.length:0),0)}`;
-if(sel&&mt(sel)==='image'&&furl){document.getElementById('hImg').src=furl;document.getElementById('hm').classList.add('on');document.getElementById('hImg').onload=()=>{const ov=document.getElementById('hOv');ov.innerHTML='';let n=1;const all=[];agents.forEach(a=>{(a.anomalies||[]).forEach(an=>{if(an.location)all.push({...an,agent:a.agent_type})})});all.forEach(an=>{const m=document.createElement('div');m.className='am';m.style.left=an.location.x+'%';m.style.top=an.location.y+'%';m.style.transform='translate(-50%,-50%)';const la={forensic_technical:t('ha_forensic'),physical:t('ha_physical'),contextual:t('ha_contextual'),ai_generation:t('ha_ai'),copy_move:t('ha_copymove'),frequency_analysis:t('ha_frequency'),audio_deepfake:t('ha_audio'),video_forensic:t('ha_video'),document_forensic:t('ha_document'),metadata_consistency:t('ha_metadata')};m.innerHTML=`<div class="mr ${an.severity}"><span class="mn">${n}</span></div><div class="mt"><div class="ta ${an.agent||''}">${la[an.agent]||an.agent}</div><div class="tt">${an.description}</div><span class="ts ${an.severity}">${an.severity==='high'?t('sv_high'):an.severity==='medium'?t('sv_med'):t('sv_low')}</span></div>`;m.onclick=e=>{e.stopPropagation();document.querySelectorAll('.am').forEach(x=>x.classList.remove('active'));m.classList.toggle('active')};ov.appendChild(m);n++})}}
+function full(v,c,agents,hitl){const ic={authentic:'✓',forged:'✕',inconclusive:'?'};const lb={authentic:'VERIFIED — AUTHENTIC',forged:'ALERT — FORGERY DETECTED',inconclusive:'INCONCLUSIVE — REVIEW REQUIRED'};document.getElementById('ri').innerHTML=ic[v];document.getElementById('ri').className='rh-ico '+v;document.getElementById('vb').className='vbox '+v;document.getElementById('vBadge').textContent=lb[v];document.getElementById('vt').textContent=t('d_verdict_'+{authentic:'auth',forged:'forged',inconclusive:'inc'}[v]);// Dual score display: confidence + coverage
+(function(){
+  const totalAgentTypes = {image:7,video:5,audio:1,document:3};
+  // coverage = agents that actually ran / total possible for this media type
+  // We don't have media_type here, infer from agents
+  const ran = agents.length;
+  // confidence score: what the system found
+  const confPct = (c*100).toFixed(1);
+  // Is it fully clean?
+  const isClean = v === 'authentic' && agents.every(a=>!a.anomalies||a.anomalies.length===0);
+  const confHtml = isClean
+    ? `<div class="v-score-val clean">✓ CLEAN</div><div class="v-score-lbl">${t('confidence_score')}</div><div class="v-score-sub">No anomalies in all checks</div>`
+    : `<div class="v-score-val" style="color:${c>=.75?'var(--green)':c>=.5?'var(--amber)':'var(--red)'}">${confPct}%</div><div class="v-score-lbl">${t('confidence_score')}</div><div class="v-score-sub">${t('score_sub_conf')||'Weighted anomaly score'}</div>`;
+  // Max agents per media type (matches orchestrator._select_agents)
+  const maxAgents = ran<=1?1:ran<=2?2:ran<=3?3:ran<=5?5:7;
+  // Infer from agent types which media we have
+  const hasAudio = agents.some(a=>a.agent_type==='audio_deepfake');
+  const hasVideo = agents.some(a=>a.agent_type==='video_forensic');
+  const hasDoc   = agents.some(a=>a.agent_type==='document_forensic');
+  const expectedMax = hasAudio?1:hasVideo?4:hasDoc?3:7;
+  const covPct = Math.round(Math.min(100, (ran/expectedMax)*100));
+  const covHtml = `<div class="v-score-val" style="color:${covPct>=80?'var(--green)':covPct>=50?'var(--amber)':'var(--red)'}">${covPct}%</div><div class="v-score-lbl">${t('coverage_score')||'Coverage'}</div><div class="v-score-sub">${ran} ${t('d_agents_lbl')||'agents'} ran</div>`;
+  document.getElementById('vScores').innerHTML=`<div class="v-score-item">${confHtml}</div><div class="v-score-divider"></div><div class="v-score-item">${covHtml}</div>`;
+})();document.getElementById('vp').classList.add('on');
+document.getElementById('stampPanel').classList.add('on');const now=new Date().toISOString();const req=caseData?.requester;const rName=req?(req.name||req.company||''):'demo';const rId=req?(req.id_number||req.reg_number||''):'N/A';document.getElementById('stampData').innerHTML=`<strong>${t('stamp_data')}</strong>CASE: ${document.getElementById('ct').textContent}\nDATE: ${now}\nVERDICT: ${v.toUpperCase()}\nCONFIDENCE: ${(v==="authentic"&&agents.every(a=>!a.anomalies||a.anomalies.length===0))?"CLEAN":((c*100).toFixed(1)+"%")}\nCOVERAGE: ${agents.length} agent(s)\nREQUESTER: ${rName} [${rId}]\nFILE_HASH: ${document.getElementById('hv').textContent}\nAGENTS: ${agents.length}\nANOMALIES: ${agents.reduce((s,a)=>s+(a.anomalies?a.anomalies.length:0),0)}`;
+if(sel&&mt(sel)==='image'&&furl){hmAgents=agents;document.getElementById('hImg').src=furl;document.getElementById('hm').classList.add('on');document.getElementById('hImg').onload=()=>{const img=document.getElementById('hImg');const ov=document.getElementById('hOv');ov.innerHTML='';
+
+/* ── Compute the actual rendered image rect within the container ── */
+function getImgBounds(){
+  const cr=img.parentElement.getBoundingClientRect();
+  const ir=img.getBoundingClientRect();
+  return{
+    left:(ir.left-cr.left)/cr.width*100,
+    top:(ir.top-cr.top)/cr.height*100,
+    right:(ir.right-cr.left)/cr.width*100,
+    bottom:(ir.bottom-cr.top)/cr.height*100,
+    w:(ir.width/cr.width)*100,
+    h:(ir.height/cr.height)*100
+  };
+}
+
+let n=1;const all=[];
+agents.forEach(a=>{(a.anomalies||[]).forEach(an=>{if(an.location)all.push({...an,agent:a.agent_type})})});
+
+/* Clamp helper: keep marker center inside the image with a 4% margin */
+function clamp(val,mn,mx){return Math.max(mn,Math.min(mx,val));}
+
+all.forEach(an=>{
+  const b=getImgBounds();
+  /* raw % from backend → translate into container-% space */
+  const margin=4;
+  const cx=b.left + clamp(an.location.x, margin, 100-margin)/100 * b.w;
+  const cy=b.top  + clamp(an.location.y, margin, 100-margin)/100 * b.h;
+
+  const m=document.createElement('div');
+  m.className='am';
+  m.style.left=cx+'%';
+  m.style.top=cy+'%';
+  m.style.transform='translate(-50%,-50%)';
+  const la={forensic_technical:t('ha_forensic'),physical:t('ha_physical'),contextual:t('ha_contextual'),ai_generation:t('ha_ai'),copy_move:t('ha_copymove'),frequency_analysis:t('ha_frequency'),audio_deepfake:t('ha_audio'),video_forensic:t('ha_video'),document_forensic:t('ha_document'),metadata_consistency:t('ha_metadata')};
+  m.innerHTML=`<div class="mr ${an.severity}"><span class="mn">${n}</span></div><div class="mt"><div class="ta ${an.agent||''}">${la[an.agent]||an.agent}</div><div class="tt">${an.description}</div><span class="ts ${an.severity}">${an.severity==='high'?t('sv_high'):an.severity==='medium'?t('sv_med'):t('sv_low')}</span></div>`;
+  m.onclick=e=>{e.stopPropagation();document.querySelectorAll('.am').forEach(x=>x.classList.remove('active'));m.classList.toggle('active')};
+  ov.appendChild(m);n++
+});
+/* Re-render markers when container resizes (responsive layout) */
+if(!img._hmRo){img._hmRo=new ResizeObserver(()=>{if(img.complete&&img.naturalWidth>0)img.dispatchEvent(new Event('load'))});img._hmRo.observe(img.parentElement)}
+}}
 const icons={
 forensic_technical:'<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg>',
 physical:'<svg viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
@@ -555,7 +625,7 @@ audio_deepfake:'<svg viewBox="0 0 24 24" fill="none"><path d="M12 1a3 3 0 00-3 3
 video_forensic:'<svg viewBox="0 0 24 24" fill="none"><rect x="2" y="4" width="15" height="14" rx="2"/><path d="M17 9l5-3v10l-5-3"/></svg>',
 document_forensic:'<svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
 metadata_consistency:'<svg viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>'};
-const meta={forensic_technical:{n:t('ag_forensic'),d:t('ag_forensic_d'),i:icons.forensic_technical},physical:{n:t('ag_physical'),d:t('ag_physical_d'),i:icons.physical},contextual:{n:t('ag_contextual'),d:t('ag_contextual_d'),i:icons.contextual},ai_generation:{n:t('ag_ai'),d:t('ag_ai_d'),i:icons.ai_generation},copy_move:{n:t('ag_copymove'),d:t('ag_copymove_d'),i:icons.copy_move},frequency_analysis:{n:t('ag_frequency'),d:t('ag_frequency_d'),i:icons.frequency_analysis},audio_deepfake:{n:t('ag_audio'),d:t('ag_audio_d'),i:icons.audio_deepfake},video_forensic:{n:t('ag_video'),d:t('ag_video_d'),i:icons.video_forensic},document_forensic:{n:t('ag_document'),d:t('ag_document_d'),i:icons.document_forensic},metadata_consistency:{n:t('ag_metadata'),d:t('ag_metadata_d'),i:icons.metadata_consistency}};
+const meta={forensic_technical:{n:t('ag_forensic'),d:t('ag_forensic_d'),i:icons.forensic_technical},physical:{n:t('ag_physical'),d:t('ag_physical_d'),i:icons.physical},contextual:{n:t('ag_contextual'),d:t('ag_contextual_d'),i:icons.contextual},ai_generation:{n:t('ag_ai'),d:t('ag_ai_d'),i:icons.ai_generation},copy_move:{n:t('ag_copymove'),d:t('ag_copymove_d'),i:icons.copy_move},frequency_analysis:{n:t('ag_frequency'),d:t('ag_frequency_d'),i:icons.frequency_analysis},audio_deepfake:{n:t('ag_audio'),d:t('ag_audio_d'),i:icons.audio_deepfake},video_forensic:{n:t('ag_video'),d:t('ag_video_d'),i:icons.video_forensic},document_forensic:{n:t('ag_document'),d:t('ag_document_d'),i:icons.document_forensic},metadata_consistency:{n:t('ag_metadata'),d:t('ag_metadata_d'),i:icons.metadata_consistency},c2pa_provenance:{n:t('ag_c2pa'),d:t('ag_c2pa_d'),i:icons.c2pa_provenance}};
 document.getElementById('al').innerHTML=agents.map(a=>{const m=meta[a.agent_type]||{n:a.agent_type,d:'',i:'●'};const sc=a.confidence_score>=.8?'high':a.confidence_score>=.6?'medium':'low';const ah=(a.anomalies||[]).map(an=>{const sv=an.severity==='high'?'':an.severity==='medium'?' med':' low';return`<div class="an${sv}"><div class="an-t">${an.type||''}</div><div class="an-d">${an.description}</div></div>`}).join('');return`<div class="ag-c" onclick="this.classList.toggle('open')"><div class="ag-h"><div class="ag-i ${a.agent_type}">${m.i}</div><div class="ag-inf"><div class="ag-n">${m.n}</div><div class="ag-d">${m.d}</div></div><div style="display:flex;align-items:center;gap:8px"><div style="width:60px;height:6px;background:var(--deep);border-radius:3px;overflow:hidden"><div style="height:100%;width:${a.confidence_score*100}%;background:${sc==='high'?'var(--green)':sc==='medium'?'var(--amber)':'var(--red)'};border-radius:3px;transition:width 1s ease"></div></div><div class="ag-s ${sc}">${(a.confidence_score*100).toFixed(0)}%</div></div><div class="ag-arr">▾</div></div><div class="ag-b"><div class="ag-bi">${ah||'<div style="font-size:12px;color:var(--text-3)">'+t('d_no_anom')+'</div>'}</div></div></div>`}).join('');document.getElementById('ap').classList.add('on');
 const tot=agents.reduce((s,a)=>s+(a.anomalies?a.anomalies.length:0),0);const hi=agents.reduce((s,a)=>s+(a.anomalies?a.anomalies.filter(x=>x.severity==='high').length:0),0);const vh=v==='authentic'?'Authentic':v==='forged'?'Forged':'Inconclusive';
 document.getElementById('st').innerHTML=t('d_summary_tpl').replace('%a',agents.length).replace('%t',tot).replace('%h',hi).replace('%c',(c*100).toFixed(1)).replace('%v',vh)+(hitl?t('d_hitl_note'):'');

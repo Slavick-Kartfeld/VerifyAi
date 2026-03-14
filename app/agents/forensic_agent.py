@@ -15,16 +15,30 @@ class ForensicTechnicalAgent:
 
     AGENT_TYPE = "forensic_technical"
 
+    # File extensions that are NOT images — skip PIL entirely
+    NON_IMAGE_EXTS = {
+        ".mp3", ".wav", ".aac", ".m4a", ".flac", ".ogg", ".opus", ".wma", ".aiff", ".aif",
+        ".mp4", ".mov", ".avi", ".mkv", ".webm", ".flv", ".wmv",
+        ".pdf", ".docx", ".doc", ".txt", ".xlsx", ".pptx",
+    }
+
     async def analyze(self, file_bytes: bytes, filename: str) -> dict:
         anomalies = []
         findings = {}
 
+        # Skip image analysis entirely for known non-image types
+        ext = ("." + filename.rsplit(".", 1)[-1].lower()) if "." in filename else ""
+        if ext in self.NON_IMAGE_EXTS:
+            findings["skipped"] = True
+            findings["reason"] = f"Forensic-Technical agent skipped: '{ext}' is not an image format."
+            return self._result(0.5, findings, [])
+
         try:
             img = Image.open(io.BytesIO(file_bytes))
         except Exception:
-            return self._result(0.5, findings, [
-                self._anomaly("format", "לא ניתן לפתוח את הקובץ כתמונה", "medium")
-            ])
+            findings["skipped"] = True
+            findings["reason"] = "Could not open file as image."
+            return self._result(0.5, findings, [])
 
         # 1. ניתוח מטאדטה EXIF
         exif_anomalies, exif_findings = self._analyze_exif(img)
@@ -73,7 +87,7 @@ class ForensicTechnicalAgent:
         if not exif_data:
             anomalies.append(self._anomaly(
                 "מטאדטה",
-                "הקובץ נעדר מטאדטה EXIF לחלוטין. ייתכן שהמטאדטה הוסרה בכוונה כדי להסתיר את מקור התמונה.",
+                "JPEG/TIFF file has no EXIF metadata. Most cameras embed EXIF automatically. Missing metadata may indicate the image was processed, stripped, or artificially generated.",
                 "medium",
                 {"x": 90, "y": 10}
             ))
@@ -159,9 +173,9 @@ class ForensicTechnicalAgent:
                     ratio = round(r["mean"] / overall_mean, 1)
                     anomalies.append(self._anomaly(
                         "ELA",
-                        f"חריגה ברמת שגיאת ELA באזור ({r['row']+1},{r['col']+1}). "
-                        f"עוצמת השגיאה גבוהה פי {ratio} מהממוצע, "
-                        f"המעידה על עריכה או הדבקה באזור זה.",
+                        f"ELA error level anomaly in region ({r['row']+1},{r['col']+1}). "
+                        f"Error intensity is {ratio}x above average, "
+                        f"indicating possible editing or compositing in this area.",
                         "high",
                         {"x": x_pct, "y": y_pct}
                     ))

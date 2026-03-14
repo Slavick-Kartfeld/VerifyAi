@@ -1,39 +1,114 @@
-from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
+import asyncio
+import uuid
+import re
+from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.database import get_db
 from app.models.models import Case, AgentResult
 from app.api.schemas import VerifyResponse, CaseResponse, AgentResultResponse, AnomalyDetail, HITLApprovalRequest
-from app.services.storage import compute_sha256, detect_media_type, save_file_locally
+from app.services.storage import compute_sha256, detect_media_type, save_file_locally, validate_magic_bytes
 
-router = APIRouter(prefix="/v1", tags=["verify"])
+router  = APIRouter(prefix="/v1", tags=["verify"])
+limiter = Limiter(key_func=get_remote_address)
+
+# ── Security constants ────────────────────────────────────────────────────────
+MAX_FILE_SIZE   = 50 * 1024 * 1024   # 50 MB
+MAX_IMAGE_DIM   = 4096               # px — PIL resize threshold
+ANALYSIS_TIMEOUT = 120               # seconds per full analysis
+AGENT_TIMEOUT    = 45                # seconds per single agent
+CLIENT_ID_RE     = re.compile(r'^[a-zA-Z0-9_\-\.@]{3,128}$')
+
+
+def _validate_client_id(client_id: str) -> str:
+    if not CLIENT_ID_RE.match(client_id):
+        raise HTTPException(
+            status_code=400,
+            detail="client_id must be 3-128 chars: letters, digits, _ - . @"
+        )
+    return client_id
+
+
+def _resize_image_if_needed(file_bytes: bytes, filename: str) -> bytes:
+    """Resize images larger than MAX_IMAGE_DIM to prevent OOM."""
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if ext not in ("jpg", "jpeg", "png", "webp", "bmp", "tiff", "tif"):
+        return file_bytes
+    try:
+        from PIL import Image
+        import io
+        img = Image.open(io.BytesIO(file_bytes))
+        w, h = img.size
+        if max(w, h) <= MAX_IMAGE_DIM:
+            return file_bytes
+        # Resize keeping aspect ratio
+        ratio  = MAX_IMAGE_DIM / max(w, h)
+        new_sz = (int(w * ratio), int(h * ratio))
+        img    = img.resize(new_sz, Image.LANCZOS)
+        buf    = io.BytesIO()
+        fmt    = "JPEG" if ext in ("jpg", "jpeg") else ext.upper()
+        if fmt == "JPG":
+            fmt = "JPEG"
+        img.save(buf, format=fmt)
+        return buf.getvalue()
+    except Exception:
+        return file_bytes   # fallback — return original
 
 
 @router.post("/verify", response_model=VerifyResponse)
+@limiter.limit("10/minute;50/hour;200/day")   # per IP — adjust in Sprint 3 with JWT tiers
 async def submit_verification(
+    request: Request,
     file: UploadFile = File(...),
     client_id: str = Form(...),
     context: str = Form(default=None),
     db: AsyncSession = Depends(get_db),
 ):
     """שליחת קובץ מדיה לבדיקת אותנטיות"""
-    file_bytes = await file.read()
 
+    # ── 1. Validate client_id ──────────────────────────────────────────────
+    _validate_client_id(client_id)
+
+    # ── 2. Read & size-check ───────────────────────────────────────────────
+    file_bytes = await file.read()
     if len(file_bytes) == 0:
         raise HTTPException(status_code=400, detail="הקובץ ריק")
+    if len(file_bytes) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail=f"קובץ גדול מדי. מקסימום {MAX_FILE_SIZE // (1024*1024)}MB"
+        )
 
-    # chain of custody — hash מיידי
+    # ── 3. Magic bytes validation (anti-spoofing) ─────────────────────────
+    magic_type, fmt = validate_magic_bytes(file_bytes, file.filename or "upload")
+    media_type = magic_type  # use magic-confirmed type, not just extension
+
+
+    # ── 4. Resize images to prevent OOM ───────────────────────────────────
+    if media_type == "image":
+        file_bytes = _resize_image_if_needed(file_bytes, file.filename or "")
+
+    # ── 5. Chain of custody hash ───────────────────────────────────────────
     file_hash = compute_sha256(file_bytes)
-    media_type = detect_media_type(file.filename)
 
-    if media_type == "unknown":
-        raise HTTPException(status_code=400, detail="סוג קובץ לא נתמך")
+    # ── 5b. SHA-256 deduplication — return existing case immediately ───────
+    existing = await db.execute(select(Case).where(Case.file_hash == file_hash).where(Case.status == "completed"))
+    existing_case = existing.scalar_one_or_none()
+    if existing_case:
+        return VerifyResponse(
+            case_id=existing_case.id,
+            status="completed",
+            message=f"Duplicate file — returning existing analysis ({existing_case.verdict})",
+        )
 
-    # שמירת הקובץ
+    # ── 6. Save file ───────────────────────────────────────────────────────
     file_url = await save_file_locally(file_bytes, file.filename)
 
-    # יצירת מקרה בדיקה
+    # ── 7. Create case with UUID4 ──────────────────────────────────────────
     case = Case(
+        id=str(uuid.uuid4()),
         client_id=client_id,
         media_type=media_type,
         file_url=file_url,
@@ -44,12 +119,33 @@ async def submit_verification(
     await db.commit()
     await db.refresh(case)
 
-    # הפעלת Orchestrator
+    # ── 8. Run analysis with hard timeout ─────────────────────────────────
     from app.agents.orchestrator import Orchestrator
     orchestrator = Orchestrator()
-    analysis = await orchestrator.analyze(file_bytes, file.filename, media_type)
+    try:
+        analysis = await asyncio.wait_for(
+            orchestrator.analyze(file_bytes, file.filename, media_type),
+            timeout=ANALYSIS_TIMEOUT
+        )
+    except asyncio.TimeoutError:
+        case.status = "timeout"
+        case.verdict = "inconclusive"
+        case.confidence_score = 0.0
+        case.hitl_required = True
+        await db.commit()
+        raise HTTPException(
+            status_code=504,
+            detail=f"הניתוח לא הושלם תוך {ANALYSIS_TIMEOUT} שניות. נא לנסות שוב."
+        )
+    except Exception as e:
+        case.status = "error"
+        case.verdict = "inconclusive"
+        case.confidence_score = 0.0
+        case.hitl_required = True
+        await db.commit()
+        raise HTTPException(status_code=500, detail=f"שגיאה בניתוח: {str(e)[:200]}")
 
-    # שמירת תוצאות סוכנים
+    # ── 9. Save agent results ──────────────────────────────────────────────
     from app.models.models import AgentResult, CrossReferenceResult
     for ar in analysis["agent_results"]:
         agent_result = AgentResult(
@@ -61,7 +157,6 @@ async def submit_verification(
         )
         db.add(agent_result)
 
-    # שמירת הצלבה
     cross_ref = CrossReferenceResult(
         case_id=case.id,
         combined_score=analysis["confidence_score"],
@@ -70,7 +165,7 @@ async def submit_verification(
     )
     db.add(cross_ref)
 
-    # שמירת Red Team כ-AgentResult
+    # Red Team as AgentResult
     rt = analysis.get("red_team", {})
     if rt:
         rt_result = AgentResult(
@@ -82,11 +177,10 @@ async def submit_verification(
         )
         db.add(rt_result)
 
-    # עדכון המקרה
-    case.status = "completed"
+    case.status          = "completed"
     case.confidence_score = analysis["confidence_score"]
-    case.verdict = analysis["verdict"]
-    case.hitl_required = analysis["hitl_required"]
+    case.verdict         = analysis["verdict"]
+    case.hitl_required   = analysis["hitl_required"]
     await db.commit()
 
     return VerifyResponse(
@@ -99,13 +193,17 @@ async def submit_verification(
 @router.get("/verify/{case_id}", response_model=CaseResponse)
 async def get_case_status(case_id: str, db: AsyncSession = Depends(get_db)):
     """קבלת סטטוס ותוצאות בדיקה"""
+    # Basic UUID format check
+    try:
+        uuid.UUID(case_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="case_id לא תקין")
+
     result = await db.execute(select(Case).where(Case.id == case_id))
     case = result.scalar_one_or_none()
-
     if not case:
         raise HTTPException(status_code=404, detail="מקרה לא נמצא")
 
-    # טעינת ממצאי סוכנים
     agents_result = await db.execute(
         select(AgentResult).where(AgentResult.case_id == case_id)
     )
@@ -115,12 +213,11 @@ async def get_case_status(case_id: str, db: AsyncSession = Depends(get_db)):
     red_team_data = None
     for ar in agent_results:
         if ar.agent_type == "red_team":
-            # Red Team מוחזר בנפרד
             red_team_data = {
-                "summary": ar.findings.get("summary", "") if ar.findings else "",
+                "summary":      ar.findings.get("summary", "")      if ar.findings  else "",
                 "threat_level": ar.findings.get("threat_level", "low") if ar.findings else "low",
-                "challenges": ar.anomalies.get("challenges", []) if ar.anomalies else [],
-                "blind_spots": ar.anomalies.get("blind_spots", []) if ar.anomalies else [],
+                "challenges":   ar.anomalies.get("challenges", [])  if ar.anomalies else [],
+                "blind_spots":  ar.anomalies.get("blind_spots", []) if ar.anomalies else [],
                 "recommendations": ar.anomalies.get("recommendations", []) if ar.anomalies else [],
             }
             continue
@@ -132,9 +229,7 @@ async def get_case_status(case_id: str, db: AsyncSession = Depends(get_db)):
             heatmap_url=ar.heatmap_url,
         ))
 
-    hitl_rec = None
-    if case.hitl_required:
-        hitl_rec = "רמת הביטחון מתחת לסף. מומלץ לשלב מומחה אנושי."
+    hitl_rec = "רמת הביטחון מתחת לסף. מומלץ לשלב מומחה אנושי." if case.hitl_required else None
 
     resp = CaseResponse(
         id=case.id,
@@ -148,8 +243,6 @@ async def get_case_status(case_id: str, db: AsyncSession = Depends(get_db)):
         agent_results=agent_responses,
         created_at=case.created_at,
     )
-
-    # הוספת red_team מחוץ ל-schema
     result_dict = resp.model_dump()
     if red_team_data:
         result_dict["red_team"] = red_team_data
@@ -163,18 +256,20 @@ async def request_hitl(
     db: AsyncSession = Depends(get_db),
 ):
     """אישור הזמנת מומחה אנושי"""
+    try:
+        uuid.UUID(case_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="case_id לא תקין")
+
     result = await db.execute(select(Case).where(Case.id == case_id))
     case = result.scalar_one_or_none()
-
     if not case:
         raise HTTPException(status_code=404, detail="מקרה לא נמצא")
     if not case.hitl_required:
         raise HTTPException(status_code=400, detail="מקרה זה אינו דורש HITL")
 
-    # TODO: ספרינט 4 — שיבוץ מומחה מתאים
     case.status = "hitl_pending"
     await db.commit()
-
     return {"message": "בקשת HITL התקבלה, מומחה ישובץ בקרוב", "case_id": case_id}
 
 
@@ -184,45 +279,36 @@ async def download_report(case_id: str, db: AsyncSession = Depends(get_db)):
     from fastapi.responses import Response
     from app.models.models import CrossReferenceResult
 
+    try:
+        uuid.UUID(case_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="case_id לא תקין")
+
     result = await db.execute(select(Case).where(Case.id == case_id))
     case = result.scalar_one_or_none()
     if not case:
         raise HTTPException(status_code=404, detail="מקרה לא נמצא")
 
-    # Agent results
     agents_result = await db.execute(
         select(AgentResult).where(AgentResult.case_id == case_id)
     )
     agent_results = [
-        {
-            "agent_type": ar.agent_type,
-            "confidence_score": ar.confidence_score,
-            "findings": ar.findings,
-            "anomalies": ar.anomalies,
-        }
+        {"agent_type": ar.agent_type, "confidence_score": ar.confidence_score,
+         "findings": ar.findings, "anomalies": ar.anomalies}
         for ar in agents_result.scalars().all()
     ]
 
-    # Cross reference
     cr_result = await db.execute(
         select(CrossReferenceResult).where(CrossReferenceResult.case_id == case_id)
     )
     cr = cr_result.scalar_one_or_none()
 
-    # Extract Red Team data from agent results
     rt_data = next((ar for ar in agent_results if ar["agent_type"] == "red_team"), None)
-    rt_challenges = []
-    rt_blind_spots = []
-    rt_recs = []
-    rt_threat = "N/A"
-    if rt_data and rt_data.get("anomalies"):
-        rt_challenges = rt_data["anomalies"].get("challenges", [])
-        rt_blind_spots = rt_data["anomalies"].get("blind_spots", [])
-        rt_recs = rt_data["anomalies"].get("recommendations", [])
-    if rt_data and rt_data.get("findings"):
-        rt_threat = rt_data["findings"].get("threat_level", "N/A")
+    rt_challenges   = rt_data["anomalies"].get("challenges", [])    if rt_data and rt_data.get("anomalies") else []
+    rt_blind_spots  = rt_data["anomalies"].get("blind_spots", [])   if rt_data and rt_data.get("anomalies") else []
+    rt_recs         = rt_data["anomalies"].get("recommendations", []) if rt_data and rt_data.get("anomalies") else []
+    rt_threat       = rt_data["findings"].get("threat_level", "N/A") if rt_data and rt_data.get("findings") else "N/A"
 
-    # Filter out red_team from agent_results for main report
     agent_results = [ar for ar in agent_results if ar["agent_type"] != "red_team"]
 
     cross_ref = {
