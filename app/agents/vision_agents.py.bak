@@ -1,0 +1,410 @@
+"""
+סוכנים מבוססי Vision API — פיזיקלי, הקשרי, וזיהוי מנוע ייצור.
+
+Ensemble Intelligence — כל סוכן Vision שולח לכל provider זמין במקביל:
+  • Claude Sonnet  (Anthropic)  — משקל 0.45
+  • Gemini 2.0 Flash (Google)   — משקל 0.30  [חינם עד 15 RPM]
+  • GPT-4o-mini   (OpenAI)      — משקל 0.25  [הכי זול]
+
+Cross-Reference מקבל:
+  • ציון ממוצע משוקלל מכל ה-providers
+  • provider_scores (לשקיפות מלאה)
+  • consensus_conflict: True אם provider חורג >0.25 מהממוצע → Red Team חוקר
+"""
+import os
+import asyncio
+import base64
+import json
+import httpx
+from typing import Optional
+
+
+# ─────────────────────────────────────────────
+# קביעת media type מ-bytes
+# ─────────────────────────────────────────────
+def _detect_media_type(file_bytes: bytes) -> str:
+    if file_bytes[:8].startswith(b'\x89PNG'):
+        return "image/png"
+    if file_bytes[:4] == b'RIFF':
+        return "image/webp"
+    if file_bytes[:3] == b'GIF':
+        return "image/gif"
+    return "image/jpeg"
+
+
+# ─────────────────────────────────────────────
+# Provider: Claude (Anthropic)
+# ─────────────────────────────────────────────
+async def _call_claude(file_bytes: bytes, system_prompt: str, user_prompt: str) -> Optional[str]:
+    api_key = os.getenv("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        return None
+    b64 = base64.b64encode(file_bytes).decode()
+    media_type = _detect_media_type(file_bytes)
+    try:
+        async with httpx.AsyncClient(timeout=90) as client:
+            resp = await client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": api_key,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json={
+                    "model": "claude-sonnet-4-20250514",
+                    "max_tokens": 2000,
+                    "system": system_prompt,
+                    "messages": [{
+                        "role": "user",
+                        "content": [
+                            {"type": "image", "source": {
+                                "type": "base64",
+                                "media_type": media_type,
+                                "data": b64,
+                            }},
+                            {"type": "text", "text": user_prompt}
+                        ]
+                    }]
+                }
+            )
+            data = resp.json()
+            if "content" in data and data["content"]:
+                return data["content"][0].get("text", "")
+    except Exception:
+        pass
+    return None
+
+
+# ─────────────────────────────────────────────
+# Provider: Gemini 2.0 Flash (Google)
+# ─────────────────────────────────────────────
+async def _call_gemini(file_bytes: bytes, system_prompt: str, user_prompt: str) -> Optional[str]:
+    api_key = os.getenv("GEMINI_API_KEY", "")
+    if not api_key:
+        return None
+    b64 = base64.b64encode(file_bytes).decode()
+    media_type = _detect_media_type(file_bytes)
+    combined_prompt = f"[SYSTEM]\n{system_prompt}\n\n[USER]\n{user_prompt}"
+    try:
+        async with httpx.AsyncClient(timeout=90) as client:
+            resp = await client.post(
+                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}",
+                headers={"content-type": "application/json"},
+                json={
+                    "contents": [{
+                        "parts": [
+                            {"inline_data": {"mime_type": media_type, "data": b64}},
+                            {"text": combined_prompt}
+                        ]
+                    }],
+                    "generationConfig": {"maxOutputTokens": 2000, "temperature": 0.1}
+                }
+            )
+            data = resp.json()
+            candidates = data.get("candidates", [])
+            if candidates:
+                parts = candidates[0].get("content", {}).get("parts", [])
+                if parts:
+                    return parts[0].get("text", "")
+    except Exception:
+        pass
+    return None
+
+
+# ─────────────────────────────────────────────
+# Provider: GPT-4o-mini (OpenAI)
+# ─────────────────────────────────────────────
+async def _call_openai(file_bytes: bytes, system_prompt: str, user_prompt: str) -> Optional[str]:
+    api_key = os.getenv("OPENAI_API_KEY", "")
+    if not api_key:
+        return None
+    b64 = base64.b64encode(file_bytes).decode()
+    media_type = _detect_media_type(file_bytes)
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            resp = await client.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {api_key}"},
+                json={
+                    "model": "gpt-4o-mini",
+                    "max_tokens": 1500,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": [
+                            {"type": "text", "text": user_prompt},
+                            {"type": "image_url", "image_url": {
+                                "url": f"data:{media_type};base64,{b64}",
+                                "detail": "high"
+                            }}
+                        ]}
+                    ]
+                }
+            )
+            data = resp.json()
+            return data["choices"][0]["message"]["content"]
+    except Exception:
+        pass
+    return None
+
+
+# ─────────────────────────────────────────────
+# JSON parser
+# ─────────────────────────────────────────────
+def _parse_json(text: str) -> Optional[dict]:
+    try:
+        text = text.strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1].rsplit("```", 1)[0]
+        return json.loads(text)
+    except Exception:
+        return None
+
+
+# ─────────────────────────────────────────────
+# Ensemble Core
+# ─────────────────────────────────────────────
+PROVIDER_WEIGHTS = {"claude": 0.45, "gemini": 0.30, "openai": 0.25}
+CONSENSUS_CONFLICT_THRESHOLD = 0.25
+
+
+async def _call_ensemble(file_bytes: bytes, system_prompt: str, user_prompt: str) -> dict:
+    """
+    שולח ל-3 providers במקביל.
+    מחזיר weighted_score, consensus_conflict, ו-provider_scores.
+    """
+    results = await asyncio.gather(
+        _call_claude(file_bytes, system_prompt, user_prompt),
+        _call_gemini(file_bytes, system_prompt, user_prompt),
+        _call_openai(file_bytes, system_prompt, user_prompt),
+        return_exceptions=True
+    )
+    claude_raw, gemini_raw, openai_raw = results
+
+    raw = {
+        "claude": claude_raw if isinstance(claude_raw, str) else None,
+        "gemini": gemini_raw if isinstance(gemini_raw, str) else None,
+        "openai": openai_raw if isinstance(openai_raw, str) else None,
+    }
+
+    parsed = {}
+    for name, text in raw.items():
+        if text:
+            p = _parse_json(text)
+            if p:
+                parsed[name] = p
+
+    if not parsed:
+        return {
+            "results": {}, "scores": {}, "weighted_score": None,
+            "consensus_conflict": False, "providers_used": []
+        }
+
+    scores = {}
+    for name, data in parsed.items():
+        s = data.get("confidence_score") or data.get("confidence") or 0.6
+        scores[name] = float(s)
+
+    total_w = sum(PROVIDER_WEIGHTS[n] for n in scores)
+    weighted = sum(scores[n] * PROVIDER_WEIGHTS[n] for n in scores) / total_w
+    conflict = any(abs(scores[n] - weighted) > CONSENSUS_CONFLICT_THRESHOLD for n in scores)
+
+    return {
+        "results": parsed,
+        "scores": scores,
+        "weighted_score": round(weighted, 3),
+        "consensus_conflict": conflict,
+        "providers_used": list(parsed.keys()),
+    }
+
+
+def _merge_anomalies(parsed_results: dict) -> list:
+    """
+    מאחד אנומליות מכל providers.
+    אנומליה שדווחה ע"י 2+ providers מקבלת severity גבוה יותר.
+    """
+    all_items = []
+    seen_types: dict = {}
+    for provider, data in parsed_results.items():
+        items = data.get("anomalies") or data.get("indicators") or []
+        for item in items:
+            t = item.get("type", "").lower()
+            seen_types[t] = seen_types.get(t, 0) + 1
+            item.setdefault("detected_by", []).append(provider)
+            all_items.append(item)
+    for item in all_items:
+        t = item.get("type", "").lower()
+        if seen_types.get(t, 0) >= 2 and item.get("severity") == "medium":
+            item["severity"] = "high"
+            item["multi_provider_confirmed"] = True
+    return all_items
+
+
+# ─────────────────────────────────────────────
+# סוכן פיזיקלי
+# ─────────────────────────────────────────────
+class PhysicalAgent:
+    AGENT_TYPE = "physical"
+
+    SYSTEM_PROMPT = """You are a forensic physics expert analyzing images for authenticity.
+Analyze the image and look for:
+1. Shadow direction inconsistencies between objects
+2. Lighting issues — conflicting light sources
+3. Perspective errors — mismatched vanishing points
+4. Inconsistent reflections
+5. Unnatural proportions
+
+RESPOND ONLY WITH JSON in this exact format:
+{"anomalies": [{"type": "shadows/lighting/perspective/reflections/proportions", "description": "detailed description in Hebrew", "severity": "high/medium/low", "location": {"x": 0-100, "y": 0-100}}], "confidence_score": 0.0-1.0, "summary": "short summary in Hebrew"}
+
+If the image appears authentic with no issues, return empty anomalies array and high confidence_score."""
+
+    USER_PROMPT = "Analyze this image for physical inconsistencies — shadows, lighting, perspective, reflections, and proportions. Identify every anomaly. Be thorough but avoid false positives."
+
+    async def analyze(self, file_bytes: bytes, filename: str) -> dict:
+        ensemble = await _call_ensemble(file_bytes, self.SYSTEM_PROMPT, self.USER_PROMPT)
+        if ensemble["providers_used"]:
+            anomalies = _merge_anomalies(ensemble["results"])
+            primary = next((p for p in ["claude", "gemini", "openai"] if p in ensemble["results"]), None)
+            summary = ensemble["results"][primary].get("summary", "") if primary else ""
+            return {
+                "agent_type": self.AGENT_TYPE,
+                "confidence_score": ensemble["weighted_score"],
+                "findings": {
+                    "summary": summary,
+                    "source": "ensemble",
+                    "providers_used": ensemble["providers_used"],
+                    "provider_scores": ensemble["scores"],
+                    "consensus_conflict": ensemble["consensus_conflict"],
+                },
+                "anomalies": {"items": anomalies}
+            }
+        return {
+            "agent_type": self.AGENT_TYPE,
+            "confidence_score": 0.68,
+            "findings": {"summary": "ניתוח מבוסס mock — חבר API key לניתוח אמיתי", "source": "mock",
+                         "providers_used": [], "provider_scores": {}, "consensus_conflict": False},
+            "anomalies": {"items": [
+                {"type": "צללים", "description": "כיוון הצל סותר את הרקע.", "severity": "high", "location": {"x": 50, "y": 60}},
+                {"type": "פרספקטיבה", "description": "נקודות ההיעלמות אינן תואמות.", "severity": "medium", "location": {"x": 25, "y": 75}}
+            ]}
+        }
+
+
+# ─────────────────────────────────────────────
+# סוכן הקשרי
+# ─────────────────────────────────────────────
+class ContextualAgent:
+    AGENT_TYPE = "contextual"
+
+    SYSTEM_PROMPT = """You are a historical and contextual forensic expert. Analyze the image for:
+1. Elements that don't match the apparent time period (uniforms, weapons, technology, vehicles)
+2. Architectural styles that don't match the location or era
+3. Vegetation inconsistent with the geographic region
+4. Anachronistic typography, signs, or symbols
+5. Clothing styles, hairstyles, or accessories that don't fit
+
+RESPOND ONLY WITH JSON in this exact format:
+{"anomalies": [{"type": "period/uniforms/technology/architecture/vegetation", "description": "detailed description in Hebrew", "severity": "high/medium/low", "location": {"x": 0-100, "y": 0-100}}], "confidence_score": 0.0-1.0, "summary": "short summary in Hebrew"}
+
+If nothing appears anachronistic, return empty anomalies and high confidence_score."""
+
+    USER_PROMPT = "Analyze this image for historical and contextual inconsistencies. Identify any element that doesn't belong to the apparent time period, location, or cultural context. Be thorough and specific."
+
+    async def analyze(self, file_bytes: bytes, filename: str) -> dict:
+        ensemble = await _call_ensemble(file_bytes, self.SYSTEM_PROMPT, self.USER_PROMPT)
+        if ensemble["providers_used"]:
+            anomalies = _merge_anomalies(ensemble["results"])
+            primary = next((p for p in ["claude", "gemini", "openai"] if p in ensemble["results"]), None)
+            summary = ensemble["results"][primary].get("summary", "") if primary else ""
+            return {
+                "agent_type": self.AGENT_TYPE,
+                "confidence_score": ensemble["weighted_score"],
+                "findings": {
+                    "summary": summary,
+                    "source": "ensemble",
+                    "providers_used": ensemble["providers_used"],
+                    "provider_scores": ensemble["scores"],
+                    "consensus_conflict": ensemble["consensus_conflict"],
+                },
+                "anomalies": {"items": anomalies}
+            }
+        return {
+            "agent_type": self.AGENT_TYPE,
+            "confidence_score": 0.65,
+            "findings": {"summary": "ניתוח מבוסס mock — חבר API key לניתוח אמיתי", "source": "mock",
+                         "providers_used": [], "provider_scores": {}, "consensus_conflict": False},
+            "anomalies": {"items": [
+                {"type": "תקופה", "description": "אלמנטים עשויים שלא להתאים לתקופה.", "severity": "medium", "location": {"x": 60, "y": 40}}
+            ]}
+        }
+
+
+# ─────────────────────────────────────────────
+# סוכן זיהוי מנוע ייצור AI
+# ─────────────────────────────────────────────
+class AIGenerationAgent:
+    AGENT_TYPE = "ai_generation"
+
+    SYSTEM_PROMPT = """You are an expert in detecting AI-generated images. Analyze the image and determine:
+1. Is this image AI-generated? (DALL-E, Midjourney, Stable Diffusion, Firefly, Sora, etc.)
+2. If yes — which tool/model most likely created it?
+3. Key indicators: unnatural hands/fingers, distorted text, repetitive textures, asymmetric eyes, unnatural skin texture, impossible geometry, blurred backgrounds
+
+RESPOND ONLY WITH JSON in this exact format:
+{"is_ai_generated": true/false, "likely_tool": "tool name or unknown", "confidence": 0.0-1.0, "indicators": [{"type": "indicator name", "description": "description in Hebrew", "severity": "high/medium/low", "location": {"x": 0-100, "y": 0-100}}], "summary": "summary in Hebrew"}"""
+
+    USER_PROMPT = "Determine if this image was generated by AI. If so, identify the likely tool and all telltale signs. Be precise and avoid false positives."
+
+    async def analyze(self, file_bytes: bytes, filename: str) -> dict:
+        ensemble = await _call_ensemble(file_bytes, self.SYSTEM_PROMPT, self.USER_PROMPT)
+        if ensemble["providers_used"]:
+            anomalies = _merge_anomalies(ensemble["results"])
+            primary = next((p for p in ["claude", "gemini", "openai"] if p in ensemble["results"]), None)
+            primary_data = ensemble["results"][primary] if primary else {}
+
+            # הצבעה — רוב providers
+            ai_votes = sum(1 for d in ensemble["results"].values() if d.get("is_ai_generated") is True)
+            total_providers = len(ensemble["providers_used"])
+            is_ai = ai_votes >= max(1, total_providers // 2 + 1)
+
+            likely_tool = primary_data.get("likely_tool", "unknown")
+            if is_ai:
+                anomalies.insert(0, {
+                    "type": "AI Generated",
+                    "description": (
+                        f"התמונה זוהתה כנוצרת על ידי AI על ידי "
+                        f"{ai_votes}/{total_providers} providers. "
+                        f"כלי משוער: {likely_tool}."
+                    ),
+                    "severity": "high",
+                    "location": {"x": 50, "y": 50},
+                    "detected_by": ensemble["providers_used"],
+                })
+            return {
+                "agent_type": self.AGENT_TYPE,
+                "confidence_score": ensemble["weighted_score"],
+                "findings": {
+                    "is_ai_generated": is_ai,
+                    "likely_tool": likely_tool,
+                    "summary": primary_data.get("summary", ""),
+                    "source": "ensemble",
+                    "providers_used": ensemble["providers_used"],
+                    "provider_scores": ensemble["scores"],
+                    "consensus_conflict": ensemble["consensus_conflict"],
+                    "ai_vote_count": f"{ai_votes}/{total_providers}",
+                },
+                "anomalies": {"items": anomalies}
+            }
+        return {
+            "agent_type": self.AGENT_TYPE,
+            "confidence_score": 0.70,
+            "findings": {
+                "is_ai_generated": False, "likely_tool": "unknown",
+                "summary": "ניתוח מבוסס mock — חבר API key לניתוח אמיתי",
+                "source": "mock", "providers_used": [], "provider_scores": {},
+                "consensus_conflict": False, "ai_vote_count": "0/0",
+            },
+            "anomalies": {"items": [
+                {"type": "בדיקת AI", "description": "לא ניתן לקבוע ללא Vision API.", "severity": "low", "location": {"x": 50, "y": 50}}
+            ]}
+        }

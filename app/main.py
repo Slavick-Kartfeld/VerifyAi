@@ -1,18 +1,10 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 from pathlib import Path
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
 from app.core.database import engine, Base
 from app.api.routes import router
-
-# ── Rate limiter — keyed by IP ────────────────────────────────────────────────
-limiter = Limiter(key_func=get_remote_address, default_limits=["200/day", "60/hour"])
 
 
 @asynccontextmanager
@@ -24,32 +16,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="VerifyAI",
-    description="Forensic media authentication — multi-agent AI pipeline",
-    version="0.2.0",
+    description="מערכת אימות אותנטיות מדיה מבוססת צוות סוכני AI",
+    version="0.1.0",
     lifespan=lifespan,
 )
-
-# ── CORS ──────────────────────────────────────────────────────────────────────
-# Allow the production frontend + localhost dev. Tighten in Sprint 3 with JWT.
-ALLOWED_ORIGINS = [
-    "https://verifyai-3.onrender.com",
-    "http://localhost:3000",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["GET", "POST"],          # only what we actually use
-    allow_headers=["Content-Type", "Authorization", "X-Client-ID"],
-)
-
-# ── Rate limiting middleware + handler ────────────────────────────────────────
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-app.add_middleware(SlowAPIMiddleware)
 
 app.include_router(router)
 
@@ -69,4 +39,4 @@ async def main_app():
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "0.2.0"}
+    return {"status": "ok", "version": "0.1.0"}

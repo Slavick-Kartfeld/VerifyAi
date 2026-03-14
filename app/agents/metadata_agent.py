@@ -19,25 +19,9 @@ class MetadataConsistencyAgent:
 
     AGENT_TYPE = "metadata_consistency"
 
-    NON_IMAGE_EXTS = {
-        ".mp3", ".wav", ".aac", ".m4a", ".flac", ".ogg", ".opus", ".wma", ".aiff", ".aif",
-        ".mp4", ".mov", ".avi", ".mkv", ".webm", ".flv", ".wmv",
-    }
-
     async def analyze(self, file_bytes: bytes, filename: str) -> dict:
         anomalies = []
         findings = {}
-
-        ext = ("." + filename.rsplit(".", 1)[-1].lower()) if "." in filename else ""
-        if ext in self.NON_IMAGE_EXTS:
-            findings["skipped"] = True
-            findings["reason"] = f"Metadata agent skipped: '{ext}' has no image EXIF to analyze."
-            return {
-                "agent_type": "metadata_consistency",
-                "confidence_score": 0.5,
-                "findings": findings,
-                "anomalies": {"items": []},
-            }
 
         try:
             img = Image.open(io.BytesIO(file_bytes))
@@ -101,13 +85,9 @@ class MetadataConsistencyAgent:
         except Exception as e:
             findings["error"] = str(e)
 
-        # Confidence: 0 anomalies = authentic (high confidence), more anomalies = lower
+        # Confidence
         high = sum(1 for a in anomalies if a["severity"] == "high")
-        med  = sum(1 for a in anomalies if a["severity"] == "medium")
-        if len(anomalies) == 0:
-            confidence = 0.88
-        else:
-            confidence = max(0.15, 0.88 - high * 0.18 - med * 0.07 - (len(anomalies) - high - med) * 0.03)
+        confidence = max(0.15, 0.90 - high * 0.15 - len(anomalies) * 0.05)
 
         return {
             "agent_type": self.AGENT_TYPE,
